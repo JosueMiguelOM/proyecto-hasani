@@ -8,11 +8,11 @@ import {
 import {
   Google, Visibility, VisibilityOff, Email, Lock,
   Security, ArrowBack, LocationOn, LocationOff,
-  Fingerprint, Security as SecurityIcon, WifiOff, Wifi
+  Fingerprint, Security as SecurityIcon, WifiOff, Wifi,
+  CheckCircle, Error as ErrorIcon
 } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
-
-// IMPORTAR COMPONENTES BIOMÉTRICOS
+import { motion, AnimatePresence } from 'framer-motion';
 import PINSetup from '../PINSetup';
 import PINVerify from '../PINVerify';
 
@@ -20,37 +20,55 @@ const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
 
 const Login = () => {
   const [form, setForm] = useState({ email: '', password: '' });
-  const [step, setStep] = useState(1); // 1: Login, 2: 2FA
+  const [step, setStep] = useState(1);
   const [otp, setOtp] = useState('');
   const [userId, setUserId] = useState(null);
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(null);
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [authMode, setAuthMode] = useState('online'); // 'online' o 'offline'
+  const [authMode, setAuthMode] = useState('online');
   const [offlineCode, setOfflineCode] = useState('');
-  
-  // Estados para geolocalización
   const [locationDialog, setLocationDialog] = useState(false);
   const [locationStatus, setLocationStatus] = useState('idle');
   const [savedToken, setSavedToken] = useState(null);
-  
-  // Estados para sistema biométrico
   const [showPINSetup, setShowPINSetup] = useState(false);
   const [showPINVerify, setShowPINVerify] = useState(false);
   const [biometricStatus, setBiometricStatus] = useState(null);
   const [requiresBiometric, setRequiresBiometric] = useState(false);
-  
+  const [hoverEmail, setHoverEmail] = useState(false);
+  const [hoverPassword, setHoverPassword] = useState(false);
+  const [otpDigits, setOtpDigits] = useState(['', '', '', '', '', '']);
+
   const navigate = useNavigate();
 
-  // ✅ Limpiar mensajes de error cuando el usuario escribe
   useEffect(() => {
     if (error && (form.email || form.password || otp)) {
       setError(null);
     }
   }, [form.email, form.password, otp]);
 
-  // Verificar estado biométrico después del login
+  const handleOtpChange = (index, value) => {
+    if (!/^\d?$/.test(value)) return;
+    
+    const newDigits = [...otpDigits];
+    newDigits[index] = value;
+    setOtpDigits(newDigits);
+    
+    // Auto-focus next input
+    if (value && index < 5) {
+      document.getElementById(`otp-input-${index + 1}`)?.focus();
+    }
+    
+    setOtp(newDigits.join(''));
+  };
+
+  const handleOtpKeyDown = (index, e) => {
+    if (e.key === 'Backspace' && !otpDigits[index] && index > 0) {
+      document.getElementById(`otp-input-${index - 1}`)?.focus();
+    }
+  };
+
   const checkBiometricStatus = async (token) => {
     try {
       const response = await fetch(`${API_URL}/biometric/status`, {
@@ -79,7 +97,6 @@ const Login = () => {
     }
   };
 
-  // Función para solicitar ubicación
   const requestLocation = async (token) => {
     setLocationStatus('requesting');
     
@@ -181,13 +198,11 @@ const Login = () => {
     );
   };
 
-  // Función para omitir ubicación
   const skipLocation = () => {
     setLocationDialog(false);
     navigate('/Usuarios');
   };
 
-  // ✅ LOGIN MEJORADO CON MANEJO DE ERRORES
   const handleLogin = async (e) => {
     e.preventDefault();
     setError(null);
@@ -206,7 +221,6 @@ const Login = () => {
       setIsLoading(false);
       
       if (res.data.success && res.data.require2fa) {
-        // Guardar userId y modo de autenticación
         setUserId(res.data.userId);
         setAuthMode(res.data.mode || 'online');
         setStep(2);
@@ -222,7 +236,6 @@ const Login = () => {
           setSuccess('✅ Código de verificación enviado a tu correo electrónico');
         }
       } else if (res.data.success && res.data.token) {
-        // Login directo sin 2FA (no debería ocurrir normalmente)
         localStorage.setItem('token', res.data.token);
         navigate('/Usuarios');
       } else {
@@ -233,13 +246,11 @@ const Login = () => {
       setIsLoading(false);
       console.error('❌ Error en login:', err);
       
-      // Manejar errores de conexión
       if (err.code === 'ERR_NETWORK' || !err.response) {
         setError('❌ Sin conexión a internet. El servidor no está disponible.');
       } else if (err.response?.status === 401) {
         setError('❌ Credenciales incorrectas. Verifica tu email y contraseña.');
       } else if (err.response?.status === 409) {
-        // Sesión activa detectada
         setError(err.response?.data?.message || '⚠️ Ya existe una sesión activa.');
       } else {
         setError(err.response?.data?.message || 'Error de autenticación. Intenta nuevamente.');
@@ -247,26 +258,18 @@ const Login = () => {
     }
   };
 
-  // ✅ VERIFICACIÓN 2FA TOTALMENTE CORREGIDA
   const handle2FA = async (e) => {
     e.preventDefault();
     setError(null);
     setSuccess(null);
     
-    // ✅ VALIDACIONES ANTES DE ENVIAR
     if (!userId) {
       setError('❌ Error: No se encontró el ID de usuario. Inicia sesión nuevamente.');
       setStep(1);
       return;
     }
     
-    if (!otp || otp.trim().length === 0) {
-      setError('❌ Por favor ingresa el código de verificación');
-      return;
-    }
-    
-    // ✅ Validar formato de OTP (debe ser 6 dígitos o 4 dígitos para offline)
-    const otpTrimmed = otp.trim();
+    const otpTrimmed = otpDigits.join('');
     if (!/^\d{4,6}$/.test(otpTrimmed)) {
       setError('❌ El código debe tener 4 o 6 dígitos numéricos');
       return;
@@ -281,10 +284,9 @@ const Login = () => {
         mode: authMode
       });
       
-      // ✅ ENVIAR DATOS CORRECTOS
       const res = await axios.post(`${API_URL}/auth/2fa/verify`, {
-        userId: parseInt(userId), // ✅ Asegurar que sea número
-        otp: otpTrimmed // ✅ Sin espacios ni caracteres extras
+        userId: parseInt(userId),
+        otp: otpTrimmed
       });
       
       console.log('✅ Verificación exitosa:', res.data);
@@ -296,7 +298,6 @@ const Login = () => {
         setSavedToken(res.data.token);
         setSuccess(`✅ ${res.data.message || 'Autenticación exitosa'}`);
         
-        // Verificar requisitos biométricos
         setTimeout(() => {
           checkBiometricStatus(res.data.token);
         }, 500);
@@ -308,11 +309,9 @@ const Login = () => {
       setIsLoading(false);
       console.error('❌ Error en verificación 2FA:', err);
       
-      // ✅ MANEJO ESPECÍFICO DE ERRORES
       if (err.code === 'ERR_NETWORK' || !err.response) {
         setError('❌ Error de conexión. Verifica tu internet e intenta nuevamente.');
       } else if (err.response?.status === 400) {
-        // Error de validación
         const errorData = err.response?.data;
         if (errorData?.errors && Array.isArray(errorData.errors)) {
           setError(`❌ ${errorData.errors.join(', ')}`);
@@ -320,13 +319,12 @@ const Login = () => {
           setError(errorData?.message || '❌ Datos inválidos. Verifica el código ingresado.');
         }
       } else if (err.response?.status === 401) {
-        // Código incorrecto o expirado
         setError(err.response?.data?.message || '❌ Código incorrecto o expirado. Intenta nuevamente.');
       } else if (err.response?.status === 404) {
         setError('❌ Usuario no encontrado. Inicia sesión nuevamente.');
         setTimeout(() => {
           setStep(1);
-          setOtp('');
+          setOtpDigits(['', '', '', '', '', '']);
         }, 2000);
       } else {
         setError(err.response?.data?.message || '❌ Error verificando el código. Intenta nuevamente.');
@@ -344,7 +342,7 @@ const Login = () => {
 
   const handleBackToLogin = () => {
     setStep(1);
-    setOtp('');
+    setOtpDigits(['', '', '', '', '', '']);
     setUserId(null);
     setError(null);
     setSuccess(null);
@@ -352,19 +350,16 @@ const Login = () => {
     setOfflineCode('');
   };
 
-  // Manejar éxito del setup de PIN
   const handlePINSetupSuccess = () => {
     setShowPINSetup(false);
     setLocationDialog(true);
   };
 
-  // Manejar éxito de verificación de PIN
   const handlePINVerifySuccess = () => {
     setShowPINVerify(false);
     setLocationDialog(true);
   };
 
-  // Manejar cancelación de PIN
   const handlePINCancel = () => {
     if (biometricStatus?.requiresSetup) {
       setError('Debes configurar el PIN de seguridad para continuar');
@@ -379,400 +374,628 @@ const Login = () => {
   return (
     <Box sx={{
       minHeight: '100vh',
-      background: 'linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%)',
+      background: '#ffffff',
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
-      p: 2
+      position: 'relative',
+      overflow: 'hidden',
+      '&::before': {
+        content: '""',
+        position: 'absolute',
+        width: '400px',
+        height: '400px',
+        borderRadius: '50%',
+        background: 'radial-gradient(circle, #f0f0f0 0%, transparent 70%)',
+        top: '-200px',
+        right: '-200px',
+      },
+      '&::after': {
+        content: '""',
+        position: 'absolute',
+        width: '300px',
+        height: '300px',
+        borderRadius: '50%',
+        background: 'radial-gradient(circle, #f5f5f5 0%, transparent 70%)',
+        bottom: '-150px',
+        left: '-150px',
+      }
     }}>
-      <Fade in={true} timeout={800}>
-        <Paper elevation={10} sx={{
-          p: 4,
-          width: 400,
-          maxWidth: '90%',
-          borderRadius: 3,
-          background: 'rgba(255, 255, 255, 0.95)',
-          backdropFilter: 'blur(10px)',
-          boxShadow: '0 8px 32px rgba(0, 0, 0, 0.1)'
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.6 }}
+      >
+        <Paper elevation={0} sx={{
+          p: { xs: 3, sm: 4 },
+          width: { xs: '90vw', sm: 400 },
+          maxWidth: '100%',
+          borderRadius: 2,
+          background: '#ffffff',
+          border: '1px solid #e0e0e0',
+          position: 'relative',
+          zIndex: 1,
+          boxShadow: '0 4px 20px rgba(0, 0, 0, 0.05)'
         }}>
-          {/* Logo o título principal */}
+          {/* Encabezado minimalista */}
           <Box textAlign="center" mb={3}>
-            <Typography 
-              variant="h4" 
-              fontWeight={700} 
-              color="primary"
-              gutterBottom
-              sx={{ 
-                background: 'linear-gradient(45deg, #1976d2 30%, #42a5f5 90%)',
-                backgroundClip: 'text',
-                textFillColor: 'transparent',
-                WebkitBackgroundClip: 'text',
-                WebkitTextFillColor: 'transparent'
-              }}
+            <motion.div
+              initial={{ scale: 0.9 }}
+              animate={{ scale: 1 }}
+              transition={{ delay: 0.1 }}
             >
-              Bienvenido
-            </Typography>
-            <Typography variant="body2" color="text.secondary">
-              {step === 1 ? 'Ingresa a tu cuenta' : 'Verificación de seguridad'}
+              <Typography 
+                variant="h5" 
+                fontWeight={800}
+                sx={{ 
+                  color: '#000000',
+                  letterSpacing: '-0.5px',
+                  mb: 0.5
+                }}
+              >
+                Acceso
+              </Typography>
+            </motion.div>
+            <Typography variant="caption" sx={{ color: '#666', fontSize: '0.875rem' }}>
+              {step === 1 ? 'Ingresa tus credenciales' : 'Verificación de seguridad'}
             </Typography>
           </Box>
 
-          {/* Alertas de éxito y error */}
-          <Box mb={2}>
+          {/* Línea decorativa */}
+          <Box sx={{ 
+            height: '2px', 
+            background: 'linear-gradient(90deg, transparent 0%, #000 50%, transparent 100%)',
+            mb: 3,
+            mx: 'auto',
+            width: '60px'
+          }} />
+
+          {/* Alertas */}
+          <AnimatePresence>
             {error && (
-              <Zoom in={true}>
+              <motion.div
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: 'auto' }}
+                exit={{ opacity: 0, height: 0 }}
+              >
                 <Alert 
-                  severity="error" 
+                  severity="error"
                   sx={{ 
-                    borderRadius: 2,
-                    alignItems: 'center'
+                    mb: 2,
+                    borderRadius: 1,
+                    border: '1px solid #ffebee',
+                    background: '#ffebee',
+                    color: '#c62828',
+                    '& .MuiAlert-icon': { color: '#c62828' }
                   }}
                   onClose={() => setError(null)}
                 >
                   {error}
                 </Alert>
-              </Zoom>
+              </motion.div>
             )}
             {success && (
-              <Zoom in={true}>
+              <motion.div
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: 'auto' }}
+                exit={{ opacity: 0, height: 0 }}
+              >
                 <Alert 
-                  severity="success" 
+                  severity="success"
                   sx={{ 
-                    borderRadius: 2,
-                    alignItems: 'center'
+                    mb: 2,
+                    borderRadius: 1,
+                    border: '1px solid #e8f5e9',
+                    background: '#e8f5e9',
+                    color: '#2e7d32',
+                    '& .MuiAlert-icon': { color: '#2e7d32' }
                   }}
                 >
                   {success}
                 </Alert>
-              </Zoom>
+              </motion.div>
             )}
-          </Box>
+          </AnimatePresence>
 
           {step === 1 ? (
-            <Fade in={step === 1} timeout={500}>
+            <motion.div
+              key="login-form"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 0.4 }}
+            >
               <form onSubmit={handleLogin}>
-                <TextField
-                  label="Email"
-                  type="email"
-                  fullWidth
-                  margin="normal"
-                  required
-                  value={form.email}
-                  onChange={e => setForm({ ...form, email: e.target.value })}
-                  InputProps={{
-                    startAdornment: (
-                      <InputAdornment position="start">
-                        <Email color="action" />
-                      </InputAdornment>
-                    ),
-                  }}
-                  sx={{
-                    '& .MuiOutlinedInput-root': {
-                      borderRadius: 2,
-                    }
-                  }}
-                  disabled={isLoading}
-                />
-                <TextField
-                  label="Contraseña"
-                  type={showPassword ? 'text' : 'password'}
-                  fullWidth
-                  margin="normal"
-                  required
-                  value={form.password}
-                  onChange={e => setForm({ ...form, password: e.target.value })}
-                  InputProps={{
-                    startAdornment: (
-                      <InputAdornment position="start">
-                        <Lock color="action" />
-                      </InputAdornment>
-                    ),
-                    endAdornment: (
-                      <InputAdornment position="end">
-                        <IconButton
-                          aria-label="toggle password visibility"
-                          onClick={handleClickShowPassword}
-                          edge="end"
-                          disabled={isLoading}
-                        >
-                          {showPassword ? <VisibilityOff /> : <Visibility />}
-                        </IconButton>
-                      </InputAdornment>
-                    ),
-                  }}
-                  sx={{
-                    '& .MuiOutlinedInput-root': {
-                      borderRadius: 2,
-                    }
-                  }}
-                  disabled={isLoading}
-                />
-                <Button 
-                  type="submit" 
-                  variant="contained" 
-                  color="primary" 
-                  fullWidth 
-                  sx={{ 
-                    mt: 3, 
-                    mb: 2, 
-                    py: 1.5,
-                    borderRadius: 2,
-                    fontSize: '1rem',
-                    fontWeight: 600,
-                    boxShadow: '0 4px 14px rgba(0, 116, 240, 0.4)'
-                  }}
-                  disabled={isLoading}
+                {/* Email Field */}
+                <motion.div
+                  whileHover={{ scale: 1.01 }}
+                  whileTap={{ scale: 0.99 }}
                 >
-                  {isLoading ? <CircularProgress size={24} color="inherit" /> : 'Ingresar'}
-                </Button>
-                
+                  <TextField
+                    label="Correo electrónico"
+                    type="email"
+                    fullWidth
+                    margin="normal"
+                    required
+                    value={form.email}
+                    onChange={e => setForm({ ...form, email: e.target.value })}
+                    onMouseEnter={() => setHoverEmail(true)}
+                    onMouseLeave={() => setHoverEmail(false)}
+                    InputProps={{
+                      startAdornment: (
+                        <InputAdornment position="start">
+                          <Email sx={{ color: hoverEmail ? '#000' : '#666' }} />
+                        </InputAdornment>
+                      ),
+                    }}
+                    sx={{
+                      '& .MuiOutlinedInput-root': {
+                        borderRadius: 1,
+                        borderColor: '#e0e0e0',
+                        '&:hover fieldset': {
+                          borderColor: '#000',
+                        },
+                        '&.Mui-focused fieldset': {
+                          borderColor: '#000',
+                          borderWidth: '2px'
+                        }
+                      },
+                      '& .MuiInputLabel-root.Mui-focused': {
+                        color: '#000',
+                      }
+                    }}
+                    disabled={isLoading}
+                  />
+                </motion.div>
+
+                {/* Password Field */}
+                <motion.div
+                  whileHover={{ scale: 1.01 }}
+                  whileTap={{ scale: 0.99 }}
+                >
+                  <TextField
+                    label="Contraseña"
+                    type={showPassword ? 'text' : 'password'}
+                    fullWidth
+                    margin="normal"
+                    required
+                    value={form.password}
+                    onChange={e => setForm({ ...form, password: e.target.value })}
+                    onMouseEnter={() => setHoverPassword(true)}
+                    onMouseLeave={() => setHoverPassword(false)}
+                    InputProps={{
+                      startAdornment: (
+                        <InputAdornment position="start">
+                          <Lock sx={{ color: hoverPassword ? '#000' : '#666' }} />
+                        </InputAdornment>
+                      ),
+                      endAdornment: (
+                        <InputAdornment position="end">
+                          <IconButton
+                            onClick={handleClickShowPassword}
+                            edge="end"
+                            disabled={isLoading}
+                            sx={{ color: hoverPassword ? '#000' : '#666' }}
+                          >
+                            {showPassword ? <VisibilityOff /> : <Visibility />}
+                          </IconButton>
+                        </InputAdornment>
+                      ),
+                    }}
+                    sx={{
+                      '& .MuiOutlinedInput-root': {
+                        borderRadius: 1,
+                        borderColor: '#e0e0e0',
+                        '&:hover fieldset': {
+                          borderColor: '#000',
+                        },
+                        '&.Mui-focused fieldset': {
+                          borderColor: '#000',
+                          borderWidth: '2px'
+                        }
+                      },
+                      '& .MuiInputLabel-root.Mui-focused': {
+                        color: '#000',
+                      }
+                    }}
+                    disabled={isLoading}
+                  />
+                </motion.div>
+
+                <motion.div
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                >
+                  <Button 
+                    type="submit" 
+                    variant="contained" 
+                    fullWidth 
+                    sx={{ 
+                      mt: 3, 
+                      mb: 2, 
+                      py: 1.2,
+                      borderRadius: 1,
+                      fontSize: '0.9rem',
+                      fontWeight: 600,
+                      background: '#000000',
+                      color: '#ffffff',
+                      textTransform: 'none',
+                      '&:hover': {
+                        background: '#333333',
+                        boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)'
+                      },
+                      '&:disabled': {
+                        background: '#cccccc'
+                      }
+                    }}
+                    disabled={isLoading}
+                  >
+                    {isLoading ? (
+                      <CircularProgress size={20} sx={{ color: '#ffffff' }} />
+                    ) : (
+                      'Continuar'
+                    )}
+                  </Button>
+                </motion.div>
+
                 <Divider sx={{ my: 2 }}>
-                  <Typography variant="body2" color="text.secondary">o</Typography>
+                  <Typography variant="caption" sx={{ color: '#999', px: 2 }}>
+                    o continuar con
+                  </Typography>
                 </Divider>
-                
-                <Button
-                  variant="outlined"
-                  color="inherit"
-                  fullWidth
-                  startIcon={<Google />}
-                  sx={{ 
-                    mb: 2, 
-                    py: 1.5,
-                    borderRadius: 2,
-                    fontWeight: 600,
-                    borderColor: '#ddd',
-                    color: 'text.primary',
-                    '&:hover': {
-                      borderColor: '#ccc',
-                      backgroundColor: 'rgba(0, 0, 0, 0.04)'
-                    }
-                  }}
-                  onClick={handleGoogleLogin}
-                  disabled={isLoading}
+
+                <motion.div
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
                 >
-                  Continuar con Google
-                </Button>
-                
-                <Stack direction="row" justifyContent="space-between" sx={{ mt: 2 }}>
+                  <Button
+                    variant="outlined"
+                    fullWidth
+                    startIcon={<Google />}
+                    sx={{ 
+                      py: 1.2,
+                      borderRadius: 1,
+                      fontWeight: 500,
+                      borderColor: '#e0e0e0',
+                      color: '#666',
+                      textTransform: 'none',
+                      '&:hover': {
+                        borderColor: '#000',
+                        color: '#000',
+                        background: 'transparent'
+                      }
+                    }}
+                    onClick={handleGoogleLogin}
+                    disabled={isLoading}
+                  >
+                    Google
+                  </Button>
+                </motion.div>
+
+                <Stack direction="row" justifyContent="space-between" sx={{ mt: 3 }}>
                   <Link 
                     href="/forgot-password" 
-                    underline="hover" 
-                    color="secondary"
-                    sx={{ fontSize: '0.9rem' }}
+                    underline="none"
+                    sx={{ 
+                      fontSize: '0.8rem',
+                      color: '#666',
+                      '&:hover': { color: '#000' }
+                    }}
                   >
                     ¿Olvidaste tu contraseña?
                   </Link>
                   <Link 
                     href="/register" 
-                    underline="hover" 
-                    color="primary"
-                    sx={{ fontSize: '0.9rem', fontWeight: 500 }}
+                    underline="none"
+                    sx={{ 
+                      fontSize: '0.8rem',
+                      color: '#000',
+                      fontWeight: 600,
+                      '&:hover': { color: '#333' }
+                    }}
                   >
-                    Crear una cuenta
+                    Crear cuenta
                   </Link>
                 </Stack>
               </form>
-            </Fade>
+            </motion.div>
           ) : (
-            <Fade in={step === 2} timeout={500}>
+            <motion.div
+              key="2fa-form"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 0.4 }}
+            >
               <form onSubmit={handle2FA}>
-                <Box textAlign="center" mb={2}>
-                  {authMode === 'offline' ? (
-                    <WifiOff sx={{ fontSize: 50, color: 'warning.main', mb: 1 }} />
-                  ) : (
-                    <Security sx={{ fontSize: 50, color: 'primary.main', mb: 1 }} />
-                  )}
+                <Box textAlign="center" mb={3}>
+                  <motion.div
+                    initial={{ rotate: 0 }}
+                    animate={{ rotate: 360 }}
+                    transition={{ duration: 0.6, delay: 0.2 }}
+                  >
+                    {authMode === 'offline' ? (
+                      <WifiOff sx={{ fontSize: 48, color: '#ff9800', mb: 2 }} />
+                    ) : (
+                      <Security sx={{ fontSize: 48, color: '#000', mb: 2 }} />
+                    )}
+                  </motion.div>
                   
-                  <Typography variant="h6" fontWeight={600} gutterBottom>
-                    {authMode === 'offline' ? '🔴 Modo Offline' : 'Verificación en dos pasos'}
+                  <Typography variant="h6" fontWeight={600} gutterBottom sx={{ color: '#000' }}>
+                    {authMode === 'offline' ? 'Modo sin conexión' : 'Verificación en dos pasos'}
                   </Typography>
                   
-                  <Typography variant="body2" color="text.secondary" mb={2}>
+                  <Typography variant="body2" sx={{ color: '#666', mb: 3 }}>
                     {authMode === 'offline' 
-                      ? 'Usa el código proporcionado para continuar'
-                      : 'Hemos enviado un código de verificación a tu correo electrónico.'}
+                      ? 'Ingresa el código proporcionado'
+                      : 'Hemos enviado un código de verificación a tu correo.'}
                   </Typography>
-                  
-                  {authMode === 'offline' && (
-                    <Alert severity="warning" sx={{ mb: 2 }}>
-                      <Typography variant="body2">
-                        ⚠️ Funcionalidad limitada hasta restaurar conexión
-                      </Typography>
-                    </Alert>
-                  )}
                   
                   {authMode === 'offline' && offlineCode && (
-                    <Box sx={{ 
-                      bgcolor: 'warning.light', 
-                      p: 2, 
-                      borderRadius: 2,
-                      mb: 2 
-                    }}>
-                      <Typography variant="h6" color="warning.dark">
-                        Código: {offlineCode}
-                      </Typography>
-                      <Typography variant="caption" color="warning.dark">
-                        Expira en 10 minutos
-                      </Typography>
-                    </Box>
+                    <motion.div
+                      initial={{ scale: 0.9 }}
+                      animate={{ scale: 1 }}
+                      whileHover={{ scale: 1.05 }}
+                    >
+                      <Box sx={{ 
+                        bgcolor: '#fff3e0', 
+                        p: 2, 
+                        borderRadius: 1,
+                        mb: 3,
+                        border: '1px solid #ffe0b2'
+                      }}>
+                        <Typography variant="h6" sx={{ color: '#e65100', fontWeight: 700 }}>
+                          {offlineCode}
+                        </Typography>
+                        <Typography variant="caption" sx={{ color: '#e65100', display: 'block', mt: 0.5 }}>
+                          Expira en 10 minutos
+                        </Typography>
+                      </Box>
+                    </motion.div>
                   )}
                 </Box>
-                
-                <TextField
-                  label="Código de verificación"
-                  fullWidth
-                  margin="normal"
-                  required
-                  value={otp}
-                  onChange={e => {
-                    // ✅ Solo permitir números
-                    const value = e.target.value.replace(/\D/g, '');
-                    if (value.length <= 6) {
-                      setOtp(value);
-                    }
-                  }}
-                  placeholder={authMode === 'offline' ? '4 dígitos' : '6 dígitos'}
-                  inputProps={{
-                    maxLength: authMode === 'offline' ? 4 : 6,
-                    inputMode: 'numeric',
-                    pattern: '[0-9]*'
-                  }}
-                  InputProps={{
-                    startAdornment: (
-                      <InputAdornment position="start">
-                        {authMode === 'offline' ? <WifiOff color="action" /> : <Security color="action" />}
-                      </InputAdornment>
-                    ),
-                  }}
-                  sx={{
-                    '& .MuiOutlinedInput-root': {
-                      borderRadius: 2,
-                    }
-                  }}
-                  disabled={isLoading}
-                  autoFocus
-                />
-                
-                <Button 
-                  type="submit" 
-                  variant="contained" 
-                  color={authMode === 'offline' ? 'warning' : 'primary'} 
-                  fullWidth 
-                  sx={{ 
-                    mt: 2, 
-                    mb: 1,
-                    py: 1.5,
-                    borderRadius: 2,
-                    fontSize: '1rem',
-                    fontWeight: 600
-                  }}
-                  disabled={isLoading || otp.trim().length < 4}
-                >
-                  {isLoading ? <CircularProgress size={24} color="inherit" /> : 'Verificar Código'}
-                </Button>
-                
-                <Button
-                  fullWidth
-                  startIcon={<ArrowBack />}
-                  sx={{ 
-                    mt: 1,
-                    borderRadius: 2,
-                  }}
-                  onClick={handleBackToLogin}
-                  disabled={isLoading}
-                >
-                  Volver al inicio de sesión
-                </Button>
-              </form>
-            </Fade>
-          )}
-        </Paper>
-      </Fade>
 
-      {/* Dialog de Ubicación */}
+                {/* OTP Input con dígitos separados */}
+                <Box sx={{ display: 'flex', justifyContent: 'center', gap: 1, mb: 3 }}>
+                  {otpDigits.map((digit, index) => (
+                    <motion.div
+                      key={index}
+                      whileHover={{ y: -2 }}
+                      whileTap={{ scale: 0.95 }}
+                    >
+                      <TextField
+                        id={`otp-input-${index}`}
+                        value={digit}
+                        onChange={(e) => handleOtpChange(index, e.target.value)}
+                        onKeyDown={(e) => handleOtpKeyDown(index, e)}
+                        inputProps={{
+                          maxLength: 1,
+                          inputMode: 'numeric',
+                          pattern: '[0-9]*',
+                          style: { textAlign: 'center', fontSize: '1.2rem' }
+                        }}
+                        sx={{
+                          width: 45,
+                          '& .MuiOutlinedInput-root': {
+                            borderRadius: 1,
+                            '&.Mui-focused fieldset': {
+                              borderColor: '#000',
+                              borderWidth: '2px'
+                            }
+                          }
+                        }}
+                        disabled={isLoading}
+                      />
+                    </motion.div>
+                  ))}
+                </Box>
+
+                <motion.div
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                >
+                  <Button 
+                    type="submit" 
+                    variant="contained"
+                    fullWidth 
+                    sx={{ 
+                      mt: 2,
+                      py: 1.2,
+                      borderRadius: 1,
+                      fontSize: '0.9rem',
+                      fontWeight: 600,
+                      background: authMode === 'offline' ? '#ff9800' : '#000',
+                      color: '#ffffff',
+                      textTransform: 'none',
+                      '&:hover': {
+                        background: authMode === 'offline' ? '#f57c00' : '#333'
+                      }
+                    }}
+                    disabled={isLoading || otpDigits.join('').length < 4}
+                  >
+                    {isLoading ? (
+                      <CircularProgress size={20} sx={{ color: '#ffffff' }} />
+                    ) : (
+                      'Verificar'
+                    )}
+                  </Button>
+                </motion.div>
+
+                <motion.div
+                  whileHover={{ x: -3 }}
+                >
+                  <Button
+                    fullWidth
+                    startIcon={<ArrowBack />}
+                    sx={{ 
+                      mt: 1.5,
+                      borderRadius: 1,
+                      color: '#666',
+                      textTransform: 'none',
+                      '&:hover': {
+                        color: '#000',
+                        background: 'transparent'
+                      }
+                    }}
+                    onClick={handleBackToLogin}
+                    disabled={isLoading}
+                  >
+                    Volver
+                  </Button>
+                </motion.div>
+              </form>
+            </motion.div>
+          )}
+
+          {/* Pie de página minimalista */}
+          <Box sx={{ 
+            mt: 3, 
+            pt: 2, 
+            borderTop: '1px solid #f0f0f0',
+            textAlign: 'center' 
+          }}>
+            <Typography variant="caption" sx={{ color: '#999', fontSize: '0.75rem' }}>
+              © {new Date().getFullYear()} Sistema de seguridad
+            </Typography>
+          </Box>
+        </Paper>
+      </motion.div>
+
+      {/* Dialog de Ubicación - Rediseñado */}
       <Dialog 
         open={locationDialog} 
         onClose={skipLocation}
         maxWidth="sm" 
         fullWidth
         PaperProps={{
-          sx: { borderRadius: 3 }
+          sx: { 
+            borderRadius: 2,
+            border: '1px solid #e0e0e0'
+          }
         }}
       >
-        <DialogTitle sx={{ textAlign: 'center', pb: 1 }}>
-          <LocationOn sx={{ fontSize: 48, color: 'primary.main', mb: 1 }} />
-          <Typography variant="h5" sx={{ fontWeight: 600 }}>
-            Permitir Ubicación
-          </Typography>
-        </DialogTitle>
-        
-        <DialogContent sx={{ textAlign: 'center', pb: 2 }}>
-          <Typography variant="body1" gutterBottom>
-            Para brindarte una mejor experiencia, nos gustaría acceder a tu ubicación.
-          </Typography>
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+        >
+          <DialogTitle sx={{ textAlign: 'center', pb: 1 }}>
+            <LocationOn sx={{ fontSize: 48, color: '#000', mb: 1 }} />
+            <Typography variant="h6" sx={{ fontWeight: 600, color: '#000' }}>
+              Ubicación
+            </Typography>
+          </DialogTitle>
           
-          <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-            Esto nos permitirá:
-          </Typography>
-          
-          <Box sx={{ textAlign: 'left', mb: 3 }}>
-            <Typography variant="body2" sx={{ mb: 0.5 }}>
-              • Mostrar contenido relevante a tu zona
+          <DialogContent sx={{ textAlign: 'center', pb: 2 }}>
+            <Typography variant="body1" gutterBottom sx={{ color: '#666', mb: 2 }}>
+              Permite el acceso a tu ubicación para una mejor experiencia
             </Typography>
-            <Typography variant="body2" sx={{ mb: 0.5 }}>
-              • Encontrar usuarios o servicios cercanos
-            </Typography>
-            <Typography variant="body2" sx={{ mb: 0.5 }}>
-              • Funcionar sin conexión (datos guardados localmente)
-            </Typography>
-          </Box>
-
-          {locationStatus === 'requesting' && (
-            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 2, mb: 2 }}>
-              <CircularProgress size={24} />
-              <Typography>Obteniendo ubicación...</Typography>
+            
+            <Box sx={{ 
+              bgcolor: '#f5f5f5', 
+              p: 2, 
+              borderRadius: 1,
+              textAlign: 'left',
+              mb: 3 
+            }}>
+              <Typography variant="body2" sx={{ color: '#333', mb: 1, display: 'flex', alignItems: 'center' }}>
+                <CheckCircle sx={{ fontSize: 16, color: '#4caf50', mr: 1 }} />
+                Mostrar contenido relevante a tu zona
+              </Typography>
+              <Typography variant="body2" sx={{ color: '#333', mb: 1, display: 'flex', alignItems: 'center' }}>
+                <CheckCircle sx={{ fontSize: 16, color: '#4caf50', mr: 1 }} />
+                Funcionamiento offline
+              </Typography>
+              <Typography variant="body2" sx={{ color: '#333', display: 'flex', alignItems: 'center' }}>
+                <CheckCircle sx={{ fontSize: 16, color: '#4caf50', mr: 1 }} />
+                Datos guardados localmente
+              </Typography>
             </Box>
-          )}
 
-          {locationStatus === 'success' && (
-            <Alert severity="success" sx={{ mb: 2 }}>
-              ¡Ubicación guardada correctamente!
-            </Alert>
-          )}
+            {locationStatus === 'requesting' && (
+              <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 2, mb: 2 }}>
+                <CircularProgress size={24} sx={{ color: '#000' }} />
+                <Typography sx={{ color: '#666' }}>Obteniendo ubicación...</Typography>
+              </Box>
+            )}
 
-          {locationStatus === 'denied' && (
-            <Alert severity="warning" sx={{ mb: 2 }}>
-              No se pudo obtener la ubicación. Puedes continuar sin ella.
-            </Alert>
-          )}
+            {locationStatus === 'success' && (
+              <Alert 
+                severity="success"
+                sx={{ 
+                  mb: 2,
+                  borderRadius: 1,
+                  background: '#e8f5e9',
+                  color: '#2e7d32'
+                }}
+              >
+                Ubicación guardada
+              </Alert>
+            )}
 
-          <Typography variant="caption" color="text.secondary">
-            Puedes cambiar estos permisos más tarde en la configuración de tu navegador.
-          </Typography>
-        </DialogContent>
-        
-        <DialogActions sx={{ justifyContent: 'center', gap: 1, pb: 3 }}>
-          <Button 
-            onClick={skipLocation}
-            variant="outlined"
-            sx={{ borderRadius: 2 }}
-            disabled={locationStatus === 'requesting'}
-          >
-            Omitir
-          </Button>
-          <Button 
-            onClick={() => requestLocation(savedToken)}
-            variant="contained"
-            startIcon={locationStatus === 'requesting' ? <CircularProgress size={16} /> : <LocationOn />}
-            sx={{ borderRadius: 2 }}
-            disabled={locationStatus === 'requesting' || locationStatus === 'success'}
-          >
-            {locationStatus === 'requesting' ? 'Obteniendo...' : 'Permitir Ubicación'}
-          </Button>
-        </DialogActions>
+            {locationStatus === 'denied' && (
+              <Alert 
+                severity="warning"
+                sx={{ 
+                  mb: 2,
+                  borderRadius: 1,
+                  background: '#fff3e0',
+                  color: '#e65100'
+                }}
+              >
+                Ubicación no disponible
+              </Alert>
+            )}
+
+            <Typography variant="caption" sx={{ color: '#999', display: 'block' }}>
+              Puedes cambiar los permisos en configuración
+            </Typography>
+          </DialogContent>
+          
+          <DialogActions sx={{ justifyContent: 'center', gap: 2, pb: 3, px: 3 }}>
+            <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+              <Button 
+                onClick={skipLocation}
+                variant="outlined"
+                sx={{ 
+                  borderRadius: 1,
+                  borderColor: '#e0e0e0',
+                  color: '#666',
+                  '&:hover': {
+                    borderColor: '#000',
+                    color: '#000'
+                  }
+                }}
+                disabled={locationStatus === 'requesting'}
+              >
+                Omitir
+              </Button>
+            </motion.div>
+            
+            <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+              <Button 
+                onClick={() => requestLocation(savedToken)}
+                variant="contained"
+                startIcon={locationStatus === 'requesting' ? null : <LocationOn />}
+                sx={{ 
+                  borderRadius: 1,
+                  background: '#000',
+                  color: '#fff',
+                  '&:hover': {
+                    background: '#333'
+                  }
+                }}
+                disabled={locationStatus === 'requesting' || locationStatus === 'success'}
+              >
+                {locationStatus === 'requesting' ? (
+                  <CircularProgress size={20} sx={{ color: '#fff' }} />
+                ) : (
+                  'Permitir'
+                )}
+              </Button>
+            </motion.div>
+          </DialogActions>
+        </motion.div>
       </Dialog>
 
-      {/* Dialog de Setup de PIN */}
+      {/* Componentes biométricos (mantener funcionalidad) */}
       <PINSetup
         open={showPINSetup}
         onClose={() => setShowPINSetup(false)}
@@ -780,16 +1003,23 @@ const Login = () => {
         requiresSetup={biometricStatus?.requiresSetup || false}
       />
 
-      {/* Dialog de Verificación de PIN */}
       <PINVerify
         open={showPINVerify}
         onVerify={handlePINVerifySuccess}
         onCancel={handlePINCancel}
       />
 
-      {/* Backdrop global de loading */}
-      <Backdrop open={isLoading} sx={{ color: '#fff', zIndex: (theme) => theme.zIndex.drawer + 1 }}>
-        <CircularProgress color="inherit" />
+      <Backdrop open={isLoading} sx={{ 
+        background: 'rgba(255, 255, 255, 0.9)', 
+        color: '#000',
+        zIndex: (theme) => theme.zIndex.drawer + 1 
+      }}>
+        <motion.div
+          animate={{ rotate: 360 }}
+          transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+        >
+          <CircularProgress size={40} sx={{ color: '#000' }} />
+        </motion.div>
       </Backdrop>
     </Box>
   );

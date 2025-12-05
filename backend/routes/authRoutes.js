@@ -12,9 +12,6 @@ router.post('/forgot-password', authController.forgotPassword);
 router.post('/reset-password', authController.resetPassword);
 router.get('/me', authMiddleware, authController.me);
 
-// ✅ NUEVA RUTA PARA LIMPIAR ACCESO NO AUTORIZADO
-router.post('/clean-unauthorized-access', authController.cleanUnauthorizedAccess);
-
 // ✅ NUEVAS RUTAS DE CONTROL DE SESIONES
 router.post('/logout', authMiddleware, authController.logout);
 router.get('/session/check', authMiddleware, authController.checkSession);

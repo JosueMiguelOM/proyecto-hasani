@@ -40,7 +40,9 @@ import {
   ListItem,
   ListItemText,
   ListItemIcon,
-  InputAdornment
+  InputAdornment,
+  Grid,
+  alpha
 } from '@mui/material';
 import {
   Add as AddIcon,
@@ -66,17 +68,24 @@ import {
   Error as ErrorIcon,
   CheckCircle as CheckCircleIcon,
   Visibility as VisibilityIcon,
-  VisibilityOff as VisibilityOffIcon
+  VisibilityOff as VisibilityOffIcon,
+  Games as GamesIcon,
+  Store as StoreIcon,
+  Group as GroupIcon,
+  Dashboard as DashboardIcon,
+  Settings as SettingsIcon,
+  ArrowForward as ArrowForwardIcon,
+  MoreVert as MoreVertIcon,
+  TrendingUp as TrendingUpIcon,
+  Shield as ShieldIcon,
+  LocalShipping as LocalShippingIcon
 } from '@mui/icons-material';
-import { alpha } from '@mui/material/styles';
 import axios from 'axios';
-import Grid from '@mui/material/Grid';
-import { LocationOn } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 
 const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
 
-// Sistema de permisos por rol
+// Sistema de permisos por rol (sin cambios)
 const PERMISOS = {
   lector: {
     ver: true,
@@ -98,7 +107,7 @@ const PERMISOS = {
   }
 };
 
-// Configuración de validaciones
+// Configuración de validaciones (sin cambios)
 const VALIDACIONES = {
   nombre: {
     minLength: 2,
@@ -120,12 +129,11 @@ const VALIDACIONES = {
   }
 };
 
-// Función de validación robusta
+// Función de validación robusta (sin cambios)
 const validarCampo = (campo, valor) => {
   const config = VALIDACIONES[campo];
   if (!config) return { valido: true, mensaje: '' };
 
-  // Validar longitud mínima
   if (valor.length < config.minLength) {
     return { 
       valido: false, 
@@ -133,7 +141,6 @@ const validarCampo = (campo, valor) => {
     };
   }
 
-  // Validar longitud máxima
   if (valor.length > config.maxLength) {
     return { 
       valido: false, 
@@ -141,7 +148,6 @@ const validarCampo = (campo, valor) => {
     };
   }
 
-  // Validar patrón si existe
   if (config.pattern && !config.pattern.test(valor)) {
     return { 
       valido: false, 
@@ -152,17 +158,15 @@ const validarCampo = (campo, valor) => {
   return { valido: true, mensaje: '' };
 };
 
-// Función para sanitizar entrada
+// Función para sanitizar entrada (sin cambios)
 const sanitizarEntrada = (valor, maxLength = 50) => {
   if (typeof valor !== 'string') return '';
   
-  // Remover caracteres especiales peligrosos
   let sanitized = valor
-    .replace(/[<>]/g, '') // Remover < y >
-    .replace(/javascript:/gi, '') // Remover javascript:
-    .replace(/on\w+=/gi, ''); // Remover eventos como onclick, onload, etc.
+    .replace(/[<>]/g, '')
+    .replace(/javascript:/gi, '')
+    .replace(/on\w+=/gi, '');
   
-  // Limitar longitud
   if (sanitized.length > maxLength) {
     sanitized = sanitized.substring(0, maxLength);
   }
@@ -170,7 +174,7 @@ const sanitizarEntrada = (valor, maxLength = 50) => {
   return sanitized;
 };
 
-// Componente de campanita de notificaciones REAL
+// Componente de campanita de notificaciones (sin cambios funcionales, solo diseño)
 const NotificationBell = () => {
   const [notifications, setNotifications] = useState([]);
   const [unreadCount, setUnreadCount] = useState(0);
@@ -179,7 +183,6 @@ const NotificationBell = () => {
 
   const open = Boolean(anchorEl);
 
-  // Cargar notificaciones REALES del backend
   const loadNotifications = async () => {
     try {
       setLoading(true);
@@ -249,28 +252,13 @@ const NotificationBell = () => {
   const getNotificationIcon = (tipo) => {
     switch (tipo) {
       case 'seguridad':
-        return <SecurityIcon color="error" fontSize="small" />;
+        return <SecurityIcon sx={{ color: '#ff3b30' }} fontSize="small" />;
       case 'admin':
-        return <AdminIcon color="primary" fontSize="small" />;
+        return <AdminIcon sx={{ color: '#007aff' }} fontSize="small" />;
       case 'sistema':
-        return <SystemUpdateIcon color="info" fontSize="small" />;
+        return <SystemUpdateIcon sx={{ color: '#34c759' }} fontSize="small" />;
       default:
-        return <NotificationsIcon color="action" fontSize="small" />;
-    }
-  };
-
-  const getPriorityColor = (prioridad) => {
-    switch (prioridad) {
-      case 'urgent':
-        return 'error';
-      case 'high':
-        return 'warning';
-      case 'normal':
-        return 'info';
-      case 'low':
-        return 'default';
-      default:
-        return 'default';
+        return <NotificationsIcon sx={{ color: '#8e8e93' }} fontSize="small" />;
     }
   };
 
@@ -287,12 +275,26 @@ const NotificationBell = () => {
   return (
     <>
       <IconButton
-        color="inherit"
         onClick={handleClick}
-        sx={{ position: 'relative' }}
+        sx={{ 
+          position: 'relative',
+          bgcolor: 'transparent',
+          '&:hover': { bgcolor: 'rgba(0,0,0,0.04)' }
+        }}
       >
-        <Badge badgeContent={unreadCount} color="error" max={99}>
-          <NotificationsIcon />
+        <Badge 
+          badgeContent={unreadCount} 
+          color="error" 
+          max={99}
+          sx={{
+            '& .MuiBadge-badge': {
+              fontSize: '0.6rem',
+              height: 18,
+              minWidth: 18
+            }
+          }}
+        >
+          <NotificationsIcon sx={{ color: '#000' }} />
         </Badge>
       </IconButton>
 
@@ -301,16 +303,29 @@ const NotificationBell = () => {
         open={open}
         onClose={handleClose}
         PaperProps={{
-          sx: { width: 400, maxWidth: '90vw', maxHeight: '70vh', mt: 1 }
+          sx: { 
+            width: 380, 
+            maxWidth: '90vw', 
+            maxHeight: '70vh', 
+            mt: 1,
+            borderRadius: 2,
+            boxShadow: '0 8px 32px rgba(0,0,0,0.12)',
+            border: '1px solid rgba(0,0,0,0.08)'
+          }
         }}
       >
         <Box sx={{ p: 2, pb: 1 }}>
           <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
-            <Typography variant="h6" fontWeight="bold">
+            <Typography variant="h6" fontWeight={700} sx={{ color: '#000' }}>
               Notificaciones
             </Typography>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-              <IconButton size="small" onClick={handleRefresh} disabled={loading}>
+              <IconButton 
+                size="small" 
+                onClick={handleRefresh} 
+                disabled={loading}
+                sx={{ color: '#000' }}
+              >
                 <RefreshIcon fontSize="small" />
               </IconButton>
               {unreadCount > 0 && (
@@ -319,24 +334,29 @@ const NotificationBell = () => {
                   onClick={markAllAsRead}
                   startIcon={<CheckIcon />}
                   disabled={loading}
+                  sx={{ 
+                    color: '#007aff',
+                    fontWeight: 600,
+                    '&:hover': { bgcolor: 'rgba(0,122,255,0.04)' }
+                  }}
                 >
                   Marcar todas
                 </Button>
               )}
             </Box>
           </Box>
-          <Divider />
+          <Divider sx={{ borderColor: 'rgba(0,0,0,0.08)' }} />
         </Box>
 
         <Box sx={{ maxHeight: 300, overflow: 'auto' }}>
           {loading ? (
             <Box sx={{ display: 'flex', justifyContent: 'center', p: 3 }}>
-              <CircularProgress size={24} />
+              <CircularProgress size={24} sx={{ color: '#000' }} />
             </Box>
           ) : notifications.length === 0 ? (
             <Box sx={{ p: 3, textAlign: 'center' }}>
-              <NotificationsIcon sx={{ fontSize: 48, color: 'text.secondary', mb: 1 }} />
-              <Typography variant="body2" color="text.secondary">
+              <NotificationsIcon sx={{ fontSize: 48, color: 'rgba(0,0,0,0.3)', mb: 1 }} />
+              <Typography variant="body2" sx={{ color: 'rgba(0,0,0,0.5)' }}>
                 No hay notificaciones
               </Typography>
             </Box>
@@ -346,9 +366,10 @@ const NotificationBell = () => {
                 <ListItem
                   key={notification.id}
                   sx={{
-                    bgcolor: notification.leida ? 'transparent' : 'action.hover',
+                    bgcolor: notification.leida ? 'transparent' : 'rgba(0,122,255,0.04)',
                     borderLeft: notification.leida ? 'none' : '4px solid',
-                    borderLeftColor: getPriorityColor(notification.prioridad) === 'error' ? 'error.main' : 'primary.main',
+                    borderLeftColor: notification.prioridad === 'urgent' ? '#ff3b30' : '#007aff',
+                    '&:hover': { bgcolor: 'rgba(0,0,0,0.02)' }
                   }}
                   secondaryAction={
                     !notification.leida && (
@@ -356,6 +377,7 @@ const NotificationBell = () => {
                         size="small" 
                         onClick={() => markAsRead(notification.id)}
                         title="Marcar como leída"
+                        sx={{ color: '#007aff' }}
                       >
                         <CheckIcon fontSize="small" />
                       </IconButton>
@@ -368,24 +390,29 @@ const NotificationBell = () => {
                   <ListItemText
                     primary={
                       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>
-                        <Typography variant="subtitle2" component="span" sx={{ fontWeight: 600 }}>
+                        <Typography variant="subtitle2" component="span" sx={{ fontWeight: 700, color: '#000' }}>
                           {notification.titulo}
                         </Typography>
                         <Chip 
                           label={notification.prioridad} 
                           size="small" 
-                          color={getPriorityColor(notification.prioridad)}
-                          variant="outlined"
-                          sx={{ height: 20, fontSize: '0.7rem' }}
+                          sx={{ 
+                            height: 20, 
+                            fontSize: '0.65rem',
+                            fontWeight: 600,
+                            bgcolor: notification.prioridad === 'urgent' ? 'rgba(255,59,48,0.1)' : 'rgba(0,0,0,0.06)',
+                            color: notification.prioridad === 'urgent' ? '#ff3b30' : '#000',
+                            border: 'none'
+                          }}
                         />
                       </Box>
                     }
                     secondary={
                       <Box component="div">
-                        <Typography variant="body2" component="div" color="text.primary" sx={{ mb: 0.5 }}>
+                        <Typography variant="body2" component="div" sx={{ color: '#000', mb: 0.5, opacity: 0.9 }}>
                           {notification.mensaje}
                         </Typography>
-                        <Typography variant="caption" component="div" color="text.secondary">
+                        <Typography variant="caption" component="div" sx={{ color: 'rgba(0,0,0,0.5)' }}>
                           {formatDate(notification.fecha_creacion)}
                         </Typography>
                       </Box>
@@ -399,9 +426,9 @@ const NotificationBell = () => {
 
         {notifications.length > 0 && (
           <>
-            <Divider />
+            <Divider sx={{ borderColor: 'rgba(0,0,0,0.08)' }} />
             <Box sx={{ p: 1.5 }}>
-              <Typography variant="caption" color="text.secondary">
+              <Typography variant="caption" sx={{ color: 'rgba(0,0,0,0.5)' }}>
                 {notifications.length} notificación(es) • {unreadCount} sin leer
               </Typography>
             </Box>
@@ -413,15 +440,13 @@ const NotificationBell = () => {
 };
 
 const Usuarios = () => {
-  // Estados
+  // Estados (sin cambios)
   const [usuarios, setUsuarios] = useState([]);
   const [estadisticas, setEstadisticas] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(null);
   const [user, setUser] = useState(null);
-
-  // Estados del formulario
   const [mostrarFormulario, setMostrarFormulario] = useState(false);
   const [editandoUsuario, setEditandoUsuario] = useState(null);
   const [formData, setFormData] = useState({
@@ -430,69 +455,62 @@ const Usuarios = () => {
     password: '',
     rol: 'lector'
   });
-
-  // Estados de validación
   const [erroresValidacion, setErroresValidacion] = useState({
     nombre: '',
     email: '',
     password: ''
   });
-
   const [mostrarPassword, setMostrarPassword] = useState(false);
 
   const navigate = useNavigate();
 
-  // Configuración de roles con Material-UI
+  // Configuración de roles con diseño moderno
   const rolesDisponibles = [
     {
       value: 'admin',
       label: 'Administrador',
-      color: 'error',
+      color: '#ff3b30',
       icon: <AdminIcon fontSize="small" />,
-      description: 'Acceso completo al sistema'
+      description: 'Acceso completo al sistema',
+      gradient: 'linear-gradient(135deg, #ff3b30 0%, #c62828 100%)'
     },
     {
       value: 'editor',
       label: 'Editor',
-      color: 'warning',
+      color: '#ff9500',
       icon: <EditorIcon fontSize="small" />,
-      description: 'Puede crear y editar contenido'
+      description: 'Puede crear y editar contenido',
+      gradient: 'linear-gradient(135deg, #ff9500 0%, #ef6c00 100%)'
     },
     {
       value: 'lector',
       label: 'Lector',
-      color: 'success',
+      color: '#34c759',
       icon: <ReaderIcon fontSize="small" />,
-      description: 'Solo lectura del contenido'
+      description: 'Solo lectura del contenido',
+      gradient: 'linear-gradient(135deg, #34c759 0%, #2e7d32 100%)'
     }
   ];
 
-  // Función para verificar permisos
+  // Función para verificar permisos (sin cambios)
   const tienePermiso = (accion) => {
     if (!user || !user.rol) return false;
     return PERMISOS[user.rol]?.[accion] || false;
   };
 
-  // Función específica para verificar si es admin
   const esAdministrador = () => {
     return user && user.rol === 'admin';
   };
 
-  // Verificar si un usuario es el usuario actual
   const esUsuarioActual = (usuario) => {
     return user && usuario.id === user.id;
   };
 
-  // Verificar si puede restablecer contraseña de un usuario específico
   const puedeRestablecerContraseña = (usuario) => {
-    // Los administradores pueden restablecer todas las contraseñas
     if (esAdministrador()) return true;
-    
-    // Los usuarios normales solo pueden restablecer su propia contraseña
     return esUsuarioActual(usuario);
   };
 
-  // Obtener texto para el tooltip según los permisos
   const getTooltipRestablecimiento = (usuario) => {
     if (esAdministrador()) {
       return `Restablecer contraseña de ${usuario.nombre}`;
@@ -503,7 +521,7 @@ const Usuarios = () => {
     return 'Solo puedes restablecer tu propia contraseña';
   };
 
-  // Obtener usuario autenticado desde el backend
+  // Obtener usuario autenticado (sin cambios)
   useEffect(() => {
     const token = localStorage.getItem('token');
     if (!token) {
@@ -514,7 +532,6 @@ const Usuarios = () => {
       headers: { Authorization: `Bearer ${token}` }
     })
      .then(res => {
-      console.log('👤 Usuario cargado:', res.data);
       setUser(res.data.data);
     })
     .catch(() => {
@@ -523,7 +540,7 @@ const Usuarios = () => {
     });
   }, [navigate]);
 
-  // Cargar usuarios
+  // Cargar usuarios (sin cambios)
   useEffect(() => {
     cargarUsuarios();
   }, []);
@@ -562,7 +579,7 @@ const Usuarios = () => {
     }
   };
 
-  // ✅ FUNCIÓN MEJORADA PARA ENVIAR RESTABLECIMIENTO DE CONTRASEÑA CON SOPORTE OFFLINE
+  // ✅ FUNCIÓN PARA ENVIAR RESTABLECIMIENTO DE CONTRASEÑA (sin cambios)
   const enviarRestablecimientoContraseña = async (usuario) => {
     const mensajeConfirmacion = esUsuarioActual(usuario) 
       ? `¿Enviar enlace de restablecimiento de contraseña a tu email (${usuario.email})?`
@@ -576,7 +593,6 @@ const Usuarios = () => {
       setLoading(true);
       const token = localStorage.getItem('token');
       
-      // Endpoint diferente según si es admin o usuario normal
       const endpoint = esAdministrador() 
         ? `${API_URL}/auth/admin-reset-password`
         : `${API_URL}/auth/forgot-password`;
@@ -591,7 +607,6 @@ const Usuarios = () => {
 
       if (response.data.success) {
         const data = response.data.data;
-        
         let mensajeExito = '';
         
         if (esUsuarioActual(usuario)) {
@@ -600,43 +615,22 @@ const Usuarios = () => {
           mensajeExito = `Solicitud de restablecimiento procesada para ${usuario.email}`;
         }
         
-        // Agregar información del modo
         if (data.mode === 'offline') {
           mensajeExito += ' (modo offline)';
         }
         
         mostrarMensaje(mensajeExito, 'success');
-        
-        // Mostrar información detallada en consola
-        console.log('🔐 INFORMACIÓN DE RESTABLECIMIENTO:');
-        console.log(`👤 Usuario: ${usuario.nombre} (${usuario.email})`);
-        console.log(`🌐 Modo: ${data.mode}`);
-        console.log(`📧 Email enviado: ${data.emailSent ? 'SÍ' : 'NO'}`);
-        
-        if (data.resetLink) {
-          console.log(`🔗 Enlace: ${data.resetLink}`);
-        }
-        
-        if (data.token) {
-          console.log(`🔑 Token: ${data.token}`);
-          console.log('📋 Puedes copiar este token y pegarlo directamente en la URL:');
-          console.log(`   ${window.location.origin}/reset-password/${data.token}`);
-        }
-        
-        console.log('⏰ El token expira en 1 hora');
-        
       } else {
         mostrarMensaje(response.data.message || 'Error al procesar la solicitud', 'error');
       }
     } catch (err) {
-      console.error('❌ Error en restablecimiento:', err);
       mostrarMensaje(err.response?.data?.message || 'Error de conexión', 'error');
     } finally {
       setLoading(false);
     }
   };
 
-  // Función de validación en tiempo real
+  // Función de validación en tiempo real (sin cambios)
   const validarCampoEnTiempoReal = (campo, valor) => {
     const resultado = validarCampo(campo, valor);
     setErroresValidacion(prev => ({
@@ -646,41 +640,31 @@ const Usuarios = () => {
     return resultado.valido;
   };
 
-  // Manejar cambio en los campos con validación
   const handleCampoChange = (campo, valor) => {
-    // Sanitizar entrada
     const valorSanitizado = sanitizarEntrada(valor, VALIDACIONES[campo]?.maxLength || 50);
-    
-    // Validar en tiempo real
     validarCampoEnTiempoReal(campo, valorSanitizado);
-    
-    // Actualizar estado
     setFormData(prev => ({
       ...prev,
       [campo]: valorSanitizado
     }));
   };
 
-  // Validar formulario completo
   const validarFormulario = () => {
     const nuevosErrores = {};
     let esValido = true;
 
-    // Validar nombre
     const nombreValido = validarCampoEnTiempoReal('nombre', formData.nombre);
     if (!nombreValido) {
       nuevosErrores.nombre = erroresValidacion.nombre;
       esValido = false;
     }
 
-    // Validar email
     const emailValido = validarCampoEnTiempoReal('email', formData.email);
     if (!emailValido) {
       nuevosErrores.email = erroresValidacion.email;
       esValido = false;
     }
 
-    // Validar password solo si es nuevo usuario
     if (!editandoUsuario) {
       const passwordValido = validarCampoEnTiempoReal('password', formData.password);
       if (!passwordValido) {
@@ -706,7 +690,6 @@ const Usuarios = () => {
       return;
     }
 
-    // Validar formulario antes de enviar
     if (!validarFormulario()) {
       mostrarMensaje('Por favor corrige los errores en el formulario', 'error');
       return;
@@ -840,13 +823,10 @@ const Usuarios = () => {
   };
 
   const handleLogout = () => {
-    // Limpiar todos los datos de autenticación
     localStorage.removeItem('token');
     localStorage.removeItem('usuario');
     localStorage.removeItem('userPreferences');
     sessionStorage.clear();
-    
-    // Redirigir limpiamente al login
     window.location.href = '/';
   };
 
@@ -854,188 +834,176 @@ const Usuarios = () => {
     navigate('/admin/pagos');
   };
 
-  // Función para obtener el color del borde del campo según la validación
-  const getBorderColor = (campo) => {
-    if (erroresValidacion[campo]) return 'error.main';
-    if (formData[campo] && !erroresValidacion[campo]) return 'success.main';
-    return 'grey.400';
+  // NUEVA FUNCIÓN: Navegar a proveedores
+  const irAProveedores = () => {
+    navigate('/proveedores');
   };
 
-  // Función para obtener el icono de validación
+  const getBorderColor = (campo) => {
+    if (erroresValidacion[campo]) return '#ff3b30';
+    if (formData[campo] && !erroresValidacion[campo]) return '#34c759';
+    return '#c7c7cc';
+  };
+
   const getValidationIcon = (campo) => {
     if (erroresValidacion[campo]) {
-      return <ErrorIcon color="error" fontSize="small" />;
+      return <ErrorIcon sx={{ color: '#ff3b30' }} fontSize="small" />;
     }
     if (formData[campo] && !erroresValidacion[campo]) {
-      return <CheckCircleIcon color="success" fontSize="small" />;
+      return <CheckCircleIcon sx={{ color: '#34c759' }} fontSize="small" />;
     }
     return null;
   };
 
+  // Función para obtener color de avatar basado en nombre
+  const getAvatarColor = (nombre) => {
+    const colors = [
+      '#007aff', '#5856d6', '#ff2d55', '#ff9500', 
+      '#34c759', '#5ac8fa', '#ffcc00', '#af52de'
+    ];
+    const index = nombre.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
+    return colors[index % colors.length];
+  };
+
   return (
-    <Box sx={{ minHeight: '100vh', bgcolor: 'grey.50' }}>
-      {/* AppBar superior */}
-      <AppBar position="static" color="primary" elevation={2}>
-        <Toolbar>
-          <Typography variant="h6" sx={{ flexGrow: 1 }}>
-            Gestión de Usuarios
-          </Typography>
+    <Box sx={{ 
+      minHeight: '100vh', 
+      bgcolor: '#f5f5f7',
+      fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif'
+    }}>
+      {/* AppBar minimalista */}
+      <AppBar 
+        position="sticky" 
+        elevation={0}
+        sx={{ 
+          bgcolor: '#fff',
+          borderBottom: '1px solid rgba(0,0,0,0.06)',
+          backdropFilter: 'blur(20px)',
+          WebkitBackdropFilter: 'blur(20px)'
+        }}
+      >
+        <Toolbar sx={{ minHeight: 64 }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexGrow: 1 }}>
+            <GamesIcon sx={{ color: '#000', fontSize: 28 }} />
+            <Typography 
+              variant="h6" 
+              sx={{ 
+                fontWeight: 700, 
+                color: '#000',
+                letterSpacing: '-0.5px'
+              }}
+            >
+              GameStore Admin
+            </Typography>
+            <Chip 
+              label="Beta" 
+              size="small" 
+              sx={{ 
+                height: 20, 
+                fontSize: '0.65rem',
+                fontWeight: 600,
+                bgcolor: 'rgba(0,122,255,0.1)',
+                color: '#007aff',
+                border: 'none'
+              }}
+            />
+          </Box>
           
-          {/* CAMPANITA REAL */}
           <NotificationBell />
 
-          {user && user.nombre && user.rol && (
+          {user && (
             <>
-              <Chip
-                label={`${user.nombre} (${user.rol})`}
-                color={user.rol === 'admin' ? 'error' : user.rol === 'editor' ? 'warning' : 'success'}
-                sx={{ mr: 2, fontWeight: 600 }}
-                avatar={<Avatar>{getInitials(user.nombre)}</Avatar>}
-              />
-              
-              <Button
-                variant="outlined"
-                startIcon={<LocationOn />}
-                onClick={() => navigate('/locations')}
-                sx={{ 
-                  bgcolor: 'rgba(255,255,255,0.9)',
-                  color: 'primary.main',
-                  borderColor: 'rgba(255,255,255,0.5)',
-                  '&:hover': { 
-                    bgcolor: 'white',
-                    borderColor: 'primary.main',
-                    boxShadow: '0 4px 12px rgba(25, 118, 210, 0.3)'
-                  },
-                  '&:active': {
-                    transform: 'translateY(1px)'
-                  },
-                  mr: 2,
-                  fontWeight: 600,
-                  borderRadius: 2,
-                  px: 2,
-                  py: 1,
-                  transition: 'all 0.3s ease'
-                }}
-              >
-                Mi Ubicación
-              </Button>
+              {/* Menú de navegación rápido */}
+              <Stack direction="row" spacing={1} sx={{ mr: 3 }}>
+                <Tooltip title="Tienda">
+                  <IconButton 
+                    onClick={() => navigate('/shop')}
+                    sx={{ 
+                      color: '#000',
+                      '&:hover': { bgcolor: 'rgba(0,0,0,0.04)' }
+                    }}
+                  >
+                    <StoreIcon />
+                  </IconButton>
+                </Tooltip>
+                
+                {/* NUEVO: Botón para Proveedores */}
+                <Tooltip title="Proveedores">
+                  <IconButton 
+                    onClick={irAProveedores}
+                    sx={{ 
+                      color: '#000',
+                      '&:hover': { bgcolor: 'rgba(0,0,0,0.04)' }
+                    }}
+                  >
+                    <LocalShippingIcon />
+                  </IconButton>
+                </Tooltip>
+                
+                <Tooltip title="Reportes">
+                  <IconButton 
+                    onClick={() => navigate('/reportes')}
+                    sx={{ 
+                      color: '#000',
+                      '&:hover': { bgcolor: 'rgba(0,0,0,0.04)' }
+                    }}
+                  >
+                    <TrendingUpIcon />
+                  </IconButton>
+                </Tooltip>
 
-              <Button
-                variant="outlined"
-                onClick={() => navigate('/reportes')}
-                sx={{ 
-                  bgcolor: 'rgba(255,255,255,0.9)',
-                  color: 'primary.main',
-                  mr: 2
-                }}
-              >
-                Reportes
-              </Button>
+                <Tooltip title="Mi Ubicación">
+                  <IconButton 
+                    onClick={() => navigate('/locations')}
+                    sx={{ 
+                      color: '#000',
+                      '&:hover': { bgcolor: 'rgba(0,0,0,0.04)' }
+                    }}
+                  >
+                    <ShieldIcon />
+                  </IconButton>
+                </Tooltip>
+              </Stack>
 
-              <Button
-                variant="outlined"
-                onClick={() => navigate('/proveedores')}
-                sx={{     
-                  bgcolor: 'rgba(255,255,255,0.9)',
-                  mr: 2 
-                }}
-              >
-                Proveedores
-              </Button>
-
-              {/* Botón para Tienda */}
-              <Button
-                variant="outlined"
-                startIcon={<LocationOn />}
-                onClick={() => navigate('/shop')}
-                sx={{ 
-                  bgcolor: 'rgba(255,255,255,0.9)',
-                  color: 'primary.main',
-                  borderColor: 'rgba(255,255,255,0.5)',
-                  '&:hover': { 
-                    bgcolor: 'white',
-                    borderColor: 'primary.main',
-                    boxShadow: '0 4px 12px rgba(25, 118, 210, 0.3)'
-                  },
-                  '&:active': {
-                    transform: 'translateY(1px)'
-                  },
-                  mr: 2,
-                  fontWeight: 600,
-                  borderRadius: 2,
-                  px: 2,
-                  py: 1,
-                  transition: 'all 0.3s ease'
-                }}
-              >
-                Tienda
-              </Button>
-
-              {/* Botón para Preferencias de usuario */}
-              <Button
-                variant="outlined"
-                onClick={() => navigate('/preferentuser')}
-                sx={{ 
-                  bgcolor: 'rgba(255,255,255,0.9)',
-                  color: 'primary.main',
-                  borderColor: 'rgba(255,255,255,0.5)',
-                  '&:hover': { 
-                    bgcolor: 'white',
-                    borderColor: 'primary.main',
-                    boxShadow: '0 4px 12px rgba(25, 118, 210, 0.3)'
-                  },
-                  '&:active': {
-                    transform: 'translateY(1px)'
-                  },
-                  mr: 2,
-                  fontWeight: 600,
-                  borderRadius: 2,
-                  px: 2,
-                  py: 1,
-                  transition: 'all 0.3s ease'
-                }}
-              >
-                Preferencias de usuario
-              </Button>
-
-              {/* Botón para Administrar Pagos (solo admin) */}
-              {esAdministrador() && (
-                <Button
-                  variant="contained"
-                  startIcon={<PaymentIcon />}
-                  onClick={irAPagos}
+              {/* Perfil de usuario */}
+              <Box sx={{ 
+                display: 'flex', 
+                alignItems: 'center', 
+                gap: 1.5,
+                bgcolor: 'rgba(0,0,0,0.02)',
+                borderRadius: 3,
+                px: 2,
+                py: 0.5,
+                cursor: 'pointer',
+                '&:hover': { bgcolor: 'rgba(0,0,0,0.04)' }
+              }}>
+                <Avatar 
                   sx={{ 
-                    bgcolor: 'secondary.main',
-                    color: 'white',
-                    borderColor: 'secondary.main',
-                    '&:hover': { 
-                      bgcolor: 'secondary.dark',
-                      borderColor: 'secondary.dark',
-                      boxShadow: '0 4px 12px rgba(156, 39, 176, 0.4)'
-                    },
-                    '&:active': {
-                      transform: 'translateY(1px)'
-                    },
-                    mr: 2,
-                    fontWeight: 600,
-                    borderRadius: 2,
-                    px: 2,
-                    py: 1,
-                    transition: 'all 0.3s ease'
+                    width: 32, 
+                    height: 32, 
+                    bgcolor: getAvatarColor(user.nombre),
+                    fontSize: '0.875rem',
+                    fontWeight: 600
                   }}
                 >
-                  Administrar Pagos
-                </Button>
-              )}
-              
-              <Button
-                color="inherit"
-                startIcon={<LogoutIcon />}
-                onClick={handleLogout}
-                sx={{ fontWeight: 600 }}
-              >
-                Cerrar Sesión
-              </Button>
+                  {getInitials(user.nombre)}
+                </Avatar>
+                <Box>
+                  <Typography variant="subtitle2" sx={{ fontWeight: 600, color: '#000' }}>
+                    {user.nombre.split(' ')[0]}
+                  </Typography>
+                  <Typography variant="caption" sx={{ color: 'rgba(0,0,0,0.5)', display: 'block' }}>
+                    {user.rol}
+                  </Typography>
+                </Box>
+                <IconButton 
+                  size="small" 
+                  onClick={handleLogout}
+                  sx={{ color: '#000' }}
+                >
+                  <LogoutIcon fontSize="small" />
+                </IconButton>
+              </Box>
             </>
           )}
         </Toolbar>
@@ -1048,199 +1016,137 @@ const Usuarios = () => {
         <CircularProgress color="inherit" />
       </Backdrop>
 
-      {/* Header */}
-      <Paper
-        elevation={0}
-        sx={{
-          bgcolor: 'white',
-          borderBottom: 1,
-          borderColor: 'divider',
-          background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)'
-        }}
-      >
-        <Container maxWidth="xl">
-          <Box sx={{ py: 4, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-              <Avatar sx={{ bgcolor: 'white', color: 'primary.main', width: 56, height: 56 }}>
-                <PersonIcon fontSize="large" />
-              </Avatar>
-              <Box>
-                <Typography variant="h3" component="h1" sx={{ color: 'white', fontWeight: 700 }}>
-                  Gestión de Usuarios
-                </Typography>
-                <Typography variant="subtitle1" sx={{ color: 'rgba(255,255,255,0.8)' }}>
-                  Administra usuarios y roles del sistema
-                </Typography>
-              </Box>
-            </Box>
+      {/* Contenido principal */}
+      <Container maxWidth="xl" sx={{ py: 3 }}>
+        {/* Header con título */}
+        <Box sx={{ mb: 4 }}>
+          <Typography 
+            variant="h4" 
+            sx={{ 
+              fontWeight: 800, 
+              color: '#000',
+              mb: 1,
+              fontSize: { xs: '1.75rem', md: '2.125rem' }
+            }}
+          >
+            Gestión de Usuarios
+          </Typography>
+          <Typography variant="body1" sx={{ color: 'rgba(0,0,0,0.6)', maxWidth: 600 }}>
+            Administra los usuarios y permisos del sistema de tu tienda de videojuegos
+          </Typography>
+        </Box>
 
-            {tienePermiso('crear') ? (
-              <Button
-                variant="contained"
-                size="large"
-                startIcon={<AddIcon />}
-                onClick={abrirFormularioNuevo}
-                disabled={loading}
-                sx={{
-                  bgcolor: 'white',
-                  color: 'primary.main',
-                  '&:hover': { bgcolor: 'grey.100' },
-                  borderRadius: 3,
-                  px: 3,
-                  py: 1.5
-                }}
-              >
-                Nuevo Usuario
-              </Button>
-            ) : (
-              <Tooltip title="No tienes permisos para crear usuarios">
-                <Box>
-                  <Button
-                    variant="contained"
-                    size="large"
-                    startIcon={<LockIcon />}
-                    disabled
-                    sx={{
-                      bgcolor: 'rgba(255,255,255,0.3)',
-                      color: 'white',
-                      borderRadius: 3,
-                      px: 3,
-                      py: 1.5
-                    }}
-                  >
-                    Sin permisos
-                  </Button>
-                </Box>
-              </Tooltip>
-            )}
-          </Box>
-        </Container>
-      </Paper>
-
-      <Container maxWidth="xl" sx={{ py: 4 }}>
         {/* Mensajes */}
         <Collapse in={!!error}>
-          <Alert severity="error" onClose={() => setError(null)} sx={{ mb: 3, borderRadius: 2 }}>
-            <AlertTitle>Error</AlertTitle>
+          <Alert 
+            severity="error" 
+            onClose={() => setError(null)} 
+            sx={{ 
+              mb: 3, 
+              borderRadius: 2,
+              bgcolor: 'rgba(255,59,48,0.1)',
+              color: '#000',
+              border: '1px solid rgba(255,59,48,0.2)',
+              '& .MuiAlert-icon': { color: '#ff3b30' }
+            }}
+          >
+            <AlertTitle sx={{ fontWeight: 600 }}>Error</AlertTitle>
             {error}
           </Alert>
         </Collapse>
 
         <Collapse in={!!success}>
-          <Alert severity="success" onClose={() => setSuccess(null)} sx={{ mb: 3, borderRadius: 2 }}>
-            <AlertTitle>Éxito</AlertTitle>
+          <Alert 
+            severity="success" 
+            onClose={() => setSuccess(null)} 
+            sx={{ 
+              mb: 3, 
+              borderRadius: 2,
+              bgcolor: 'rgba(52,199,89,0.1)',
+              color: '#000',
+              border: '1px solid rgba(52,199,89,0.2)',
+              '& .MuiAlert-icon': { color: '#34c759' }
+            }}
+          >
+            <AlertTitle sx={{ fontWeight: 600 }}>Éxito</AlertTitle>
             {success}
           </Alert>
         </Collapse>
 
-        {/* Panel de permisos */}
-        {user && (
-          <Card elevation={0} sx={{ mb: 3, borderRadius: 3, border: 1, borderColor: 'divider' }}>
-            <CardContent>
-              <Typography variant="h6" gutterBottom>
-                Tus permisos actuales ({obtenerInfoRol(user.rol).label})
-              </Typography>
-              <Stack direction="row" spacing={2} flexWrap="wrap">
-                <Chip
-                  icon={<ReaderIcon />}
-                  label="Ver"
-                  color={tienePermiso('ver') ? 'success' : 'default'}
-                  variant={tienePermiso('ver') ? 'filled' : 'outlined'}
-                />
-                <Chip
-                  icon={<AddIcon />}
-                  label="Crear"
-                  color={tienePermiso('crear') ? 'success' : 'default'}
-                  variant={tienePermiso('crear') ? 'filled' : 'outlined'}
-                />
-                <Chip
-                  icon={<EditIcon />}
-                  label="Editar"
-                  color={tienePermiso('editar') ? 'success' : 'default'}
-                  variant={tienePermiso('editar') ? 'filled' : 'outlined'}
-                />
-                <Chip
-                  icon={<DeleteIcon />}
-                  label="Eliminar"
-                  color={tienePermiso('eliminar') ? 'success' : 'default'}
-                  variant={tienePermiso('eliminar') ? 'filled' : 'outlined'}
-                />
-                <Chip
-                  icon={<KeyIcon />}
-                  label="Restablecer Contraseña"
-                  color="warning"
-                  variant="filled"
-                />
-                {esAdministrador() && (
-                  <Chip
-                    icon={<PaymentIcon />}
-                    label="Administrar Pagos"
-                    color="secondary"
-                    variant="filled"
-                  />
-                )}
-              </Stack>
-              <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
-                {esAdministrador() 
-                  ? 'Puedes restablecer contraseñas de todos los usuarios' 
-                  : 'Puedes restablecer tu propia contraseña'}
-              </Typography>
-            </CardContent>
-          </Card>
-        )}
-
-        {/* Estadísticas con tarjetas mejoradas */}
+        {/* Estadísticas modernas */}
         {estadisticas.length > 0 && (
           <Fade in={estadisticas.length > 0}>
-            <Grid container spacing={3} sx={{ mb: 4 }}>
+            <Grid container spacing={2} sx={{ mb: 4 }}>
               {estadisticas.map((stat) => {
                 const rolInfo = obtenerInfoRol(stat.rol);
                 return (
-                  <Grid item xs={12} sm={6} md={4} key={stat.rol}>
+                  <Grid item xs={12} sm={4} key={stat.rol}>
                     <Card
                       elevation={0}
                       sx={{
-                        position: 'relative',
-                        overflow: 'visible',
                         borderRadius: 3,
-                        border: 1,
-                        borderColor: 'divider',
+                        border: '1px solid rgba(0,0,0,0.06)',
+                        bgcolor: '#fff',
+                        height: '100%',
+                        transition: 'all 0.2s ease',
                         '&:hover': {
-                          transform: 'translateY(-4px)',
-                          boxShadow: 4
-                        },
-                        transition: 'all 0.3s ease'
+                          transform: 'translateY(-2px)',
+                          boxShadow: '0 8px 24px rgba(0,0,0,0.08)'
+                        }
                       }}
                     >
                       <CardContent sx={{ p: 3 }}>
-                        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                        <Box sx={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
                           <Box>
-                            <Typography variant="body2" color="text.secondary" sx={{ fontWeight: 500 }}>
+                            <Typography 
+                              variant="body2" 
+                              sx={{ 
+                                fontWeight: 600, 
+                                color: 'rgba(0,0,0,0.5)',
+                                textTransform: 'uppercase',
+                                letterSpacing: '0.5px',
+                                mb: 1
+                              }}
+                            >
                               {rolInfo.label}s
                             </Typography>
-                            <Typography variant="h3" sx={{ fontWeight: 700, color: 'text.primary' }}>
+                            <Typography 
+                              variant="h2" 
+                              sx={{ 
+                                fontWeight: 800, 
+                                color: '#000',
+                                fontSize: '3rem',
+                                lineHeight: 1
+                              }}
+                            >
                               {stat.cantidad}
                             </Typography>
-                            <Typography variant="caption" color="text.secondary">
-                              {rolInfo.description}
-                            </Typography>
                           </Box>
-                          <Avatar
+                          <Box
                             sx={{
-                              bgcolor: alpha(
-                                rolInfo.color === 'error' ? '#f44336' :
-                                  rolInfo.color === 'warning' ? '#ff9800' : '#4caf50',
-                                0.1
-                              ),
-                              color: rolInfo.color === 'error' ? '#f44336' :
-                                rolInfo.color === 'warning' ? '#ff9800' : '#4caf50',
-                              width: 56,
-                              height: 56
+                              width: 48,
+                              height: 48,
+                              borderRadius: 2,
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              background: rolInfo.gradient,
+                              color: '#fff'
                             }}
                           >
                             {rolInfo.icon}
-                          </Avatar>
+                          </Box>
                         </Box>
+                        <Typography 
+                          variant="caption" 
+                          sx={{ 
+                            color: 'rgba(0,0,0,0.5)', 
+                            display: 'block',
+                            mt: 2
+                          }}
+                        >
+                          {rolInfo.description}
+                        </Typography>
                       </CardContent>
                     </Card>
                   </Grid>
@@ -1250,38 +1156,103 @@ const Usuarios = () => {
           </Fade>
         )}
 
-        {/* Tabla de usuarios - CORREGIDA LA ESTRUCTURA */}
-        <Card elevation={0} sx={{ borderRadius: 3, border: 1, borderColor: 'divider' }}>
-          <Box sx={{ p: 3, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <Box>
-              <Typography variant="h5" sx={{ fontWeight: 600 }}>
-                Lista de Usuarios
-              </Typography>
-              <Typography variant="body2" color="text.secondary">
-                {usuarios.length} usuarios registrados
-              </Typography>
-            </Box>
-          </Box>
-          <Divider />
+        {/* Panel de acciones */}
+        <Box sx={{ 
+          display: 'flex', 
+          justifyContent: 'space-between', 
+          alignItems: 'center',
+          mb: 3 
+        }}>
+          <Typography variant="h6" sx={{ fontWeight: 700, color: '#000' }}>
+            Todos los Usuarios
+            <Typography component="span" sx={{ color: 'rgba(0,0,0,0.5)', ml: 1, fontWeight: 400 }}>
+              ({usuarios.length} registrados)
+            </Typography>
+          </Typography>
+          
+          {tienePermiso('crear') ? (
+            <Button
+              variant="contained"
+              startIcon={<AddIcon />}
+              onClick={abrirFormularioNuevo}
+              disabled={loading}
+              sx={{
+                bgcolor: '#000',
+                color: '#fff',
+                borderRadius: 2,
+                px: 3,
+                py: 1,
+                fontWeight: 600,
+                textTransform: 'none',
+                '&:hover': {
+                  bgcolor: '#1a1a1a',
+                  boxShadow: '0 8px 24px rgba(0,0,0,0.2)'
+                },
+                '&:active': {
+                  transform: 'scale(0.98)'
+                }
+              }}
+            >
+              Nuevo Usuario
+            </Button>
+          ) : (
+            <Tooltip title="No tienes permisos para crear usuarios">
+              <Button
+                variant="outlined"
+                startIcon={<LockIcon />}
+                disabled
+                sx={{
+                  borderColor: 'rgba(0,0,0,0.1)',
+                  color: 'rgba(0,0,0,0.3)',
+                  borderRadius: 2,
+                  px: 3,
+                  py: 1,
+                  fontWeight: 600,
+                  textTransform: 'none'
+                }}
+              >
+                Sin permisos
+              </Button>
+            </Tooltip>
+          )}
+        </Box>
 
+        {/* Tabla de usuarios moderna */}
+        <Card
+          elevation={0}
+          sx={{
+            borderRadius: 3,
+            border: '1px solid rgba(0,0,0,0.06)',
+            bgcolor: '#fff',
+            overflow: 'hidden'
+          }}
+        >
           {loading && usuarios.length === 0 ? (
             <Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}>
-              <CircularProgress />
+              <CircularProgress sx={{ color: '#000' }} />
             </Box>
           ) : usuarios.length === 0 ? (
             <Box sx={{ textAlign: 'center', py: 8 }}>
-              <PersonIcon sx={{ fontSize: 64, color: 'grey.400', mb: 2 }} />
-              <Typography variant="h6" color="text.secondary" gutterBottom>
+              <GroupIcon sx={{ fontSize: 64, color: 'rgba(0,0,0,0.1)', mb: 2 }} />
+              <Typography variant="h6" sx={{ color: 'rgba(0,0,0,0.5)', mb: 1, fontWeight: 600 }}>
                 No hay usuarios registrados
               </Typography>
-              <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-                {tienePermiso('crear') ? 'Comienza creando un nuevo usuario' : 'No tienes permisos para crear usuarios'}
+              <Typography variant="body2" sx={{ color: 'rgba(0,0,0,0.4)', mb: 3 }}>
+                {tienePermiso('crear') ? 'Comienza creando el primer usuario' : 'No tienes permisos para crear usuarios'}
               </Typography>
               {tienePermiso('crear') && (
                 <Button
                   variant="contained"
                   startIcon={<AddIcon />}
                   onClick={abrirFormularioNuevo}
+                  sx={{
+                    bgcolor: '#000',
+                    color: '#fff',
+                    borderRadius: 2,
+                    px: 3,
+                    py: 1,
+                    fontWeight: 600
+                  }}
                 >
                   Crear Primer Usuario
                 </Button>
@@ -1291,11 +1262,11 @@ const Usuarios = () => {
             <TableContainer>
               <Table>
                 <TableHead>
-                  <TableRow sx={{ bgcolor: 'grey.50' }}>
-                    <TableCell sx={{ fontWeight: 600 }}>Usuario</TableCell>
-                    <TableCell sx={{ fontWeight: 600 }}>Rol</TableCell>
-                    <TableCell sx={{ fontWeight: 600 }}>Fecha de Creación</TableCell>
-                    <TableCell align="center" sx={{ fontWeight: 600 }}>Acciones</TableCell>
+                  <TableRow sx={{ bgcolor: 'rgba(0,0,0,0.02)' }}>
+                    <TableCell sx={{ fontWeight: 700, color: '#000', py: 2 }}>Usuario</TableCell>
+                    <TableCell sx={{ fontWeight: 700, color: '#000', py: 2 }}>Rol</TableCell>
+                    <TableCell sx={{ fontWeight: 700, color: '#000', py: 2 }}>Fecha de Creación</TableCell>
+                    <TableCell align="right" sx={{ fontWeight: 700, color: '#000', py: 2 }}>Acciones</TableCell>
                   </TableRow>
                 </TableHead>
                 <TableBody>
@@ -1308,19 +1279,25 @@ const Usuarios = () => {
                       <TableRow
                         key={usuario.id}
                         sx={{
-                          '&:hover': { bgcolor: 'grey.50' },
+                          '&:hover': { bgcolor: 'rgba(0,0,0,0.02)' },
                           '&:last-child td': { border: 0 },
-                          bgcolor: esMiUsuario ? 'action.hover' : 'transparent'
+                          bgcolor: esMiUsuario ? 'rgba(0,122,255,0.04)' : 'transparent'
                         }}
                       >
-                        <TableCell>
+                        <TableCell sx={{ py: 2 }}>
                           <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                            <Avatar sx={{ 
-                              bgcolor: esMiUsuario ? 'primary.main' : 'grey.400',
-                              width: 40, 
-                              height: 40 
-                            }}>
-                              {getInitials(usuario.nombre)}
+                            <Box sx={{ position: 'relative' }}>
+                              <Avatar 
+                                sx={{ 
+                                  width: 40, 
+                                  height: 40, 
+                                  bgcolor: getAvatarColor(usuario.nombre),
+                                  fontSize: '0.875rem',
+                                  fontWeight: 600
+                                }}
+                              >
+                                {getInitials(usuario.nombre)}
+                              </Avatar>
                               {esMiUsuario && (
                                 <Box
                                   sx={{
@@ -1329,81 +1306,105 @@ const Usuarios = () => {
                                     right: -2,
                                     width: 12,
                                     height: 12,
-                                    bgcolor: 'success.main',
+                                    bgcolor: '#34c759',
                                     borderRadius: '50%',
-                                    border: '2px solid white'
+                                    border: '2px solid #fff'
                                   }}
                                 />
                               )}
-                            </Avatar>
+                            </Box>
                             <Box>
-                              <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
-                                {usuario.nombre} {esMiUsuario && '(Tú)'}
-                              </Typography>
+                              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>
+                                <Typography variant="subtitle2" sx={{ fontWeight: 700, color: '#000' }}>
+                                  {usuario.nombre}
+                                </Typography>
+                                {esMiUsuario && (
+                                  <Chip
+                                    label="Tú"
+                                    size="small"
+                                    sx={{
+                                      height: 20,
+                                      fontSize: '0.65rem',
+                                      fontWeight: 600,
+                                      bgcolor: 'rgba(0,122,255,0.1)',
+                                      color: '#007aff'
+                                    }}
+                                  />
+                                )}
+                              </Box>
                               <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                                <EmailIcon fontSize="small" sx={{ color: 'grey.500' }} />
-                                <Typography variant="body2" color="text.secondary">
+                                <EmailIcon fontSize="small" sx={{ color: 'rgba(0,0,0,0.3)' }} />
+                                <Typography variant="body2" sx={{ color: 'rgba(0,0,0,0.5)' }}>
                                   {usuario.email}
                                 </Typography>
                               </Box>
                             </Box>
                           </Box>
                         </TableCell>
-                        <TableCell>
+                        <TableCell sx={{ py: 2 }}>
                           <Chip
                             icon={rolInfo.icon}
                             label={rolInfo.label}
-                            color={rolInfo.color}
-                            variant="outlined"
-                            size="small"
+                            sx={{
+                              bgcolor: alpha(rolInfo.color, 0.1),
+                              color: rolInfo.color,
+                              border: 'none',
+                              fontWeight: 600,
+                              '& .MuiChip-icon': { color: rolInfo.color }
+                            }}
                           />
                         </TableCell>
-                        <TableCell>
+                        <TableCell sx={{ py: 2 }}>
                           <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                            <CalendarIcon fontSize="small" sx={{ color: 'grey.500' }} />
-                            <Typography variant="body2" color="text.secondary">
+                            <CalendarIcon fontSize="small" sx={{ color: 'rgba(0,0,0,0.3)' }} />
+                            <Typography variant="body2" sx={{ color: 'rgba(0,0,0,0.5)' }}>
                               {formatearFecha(usuario.fecha_creacion)}
                             </Typography>
                           </Box>
                         </TableCell>
-                        <TableCell align="center">
-                          <Stack direction="row" spacing={1} justifyContent="center">
+                        <TableCell align="right" sx={{ py: 2 }}>
+                          <Stack direction="row" spacing={0.5} justifyContent="flex-end">
                             {tienePermiso('editar') ? (
                               <Tooltip title="Editar usuario">
                                 <IconButton
                                   size="small"
                                   onClick={() => abrirFormularioEditar(usuario)}
-                                  sx={{ color: 'primary.main' }}
+                                  sx={{ 
+                                    color: 'rgba(0,0,0,0.5)',
+                                    '&:hover': { 
+                                      color: '#007aff',
+                                      bgcolor: 'rgba(0,122,255,0.1)'
+                                    }
+                                  }}
                                 >
                                   <EditIcon fontSize="small" />
                                 </IconButton>
                               </Tooltip>
                             ) : (
                               <Tooltip title="Sin permisos para editar">
-                                <span>
-                                  <IconButton size="small" disabled>
-                                    <LockIcon fontSize="small" />
-                                  </IconButton>
-                                </span>
+                                <IconButton size="small" disabled sx={{ color: 'rgba(0,0,0,0.1)' }}>
+                                  <LockIcon fontSize="small" />
+                                </IconButton>
                               </Tooltip>
                             )}
                             
-                            {/* ✅ BOTÓN DE RESTABLECIMIENTO DE CONTRASEÑA (para todos los usuarios según permisos) */}
                             <Tooltip title={getTooltipRestablecimiento(usuario)}>
-                              <span>
-                                <IconButton
-                                  size="small"
-                                  onClick={() => enviarRestablecimientoContraseña(usuario)}
-                                  disabled={!puedeRestablecer}
-                                  sx={{ 
-                                    color: puedeRestablecer 
-                                      ? (esMiUsuario ? 'info.main' : 'warning.main') 
-                                      : 'disabled' 
-                                  }}
-                                >
-                                  <KeyIcon fontSize="small" />
-                                </IconButton>
-                              </span>
+                              <IconButton
+                                size="small"
+                                onClick={() => enviarRestablecimientoContraseña(usuario)}
+                                disabled={!puedeRestablecer}
+                                sx={{ 
+                                  color: puedeRestablecer 
+                                    ? (esMiUsuario ? '#007aff' : '#ff9500') 
+                                    : 'rgba(0,0,0,0.1)',
+                                  '&:hover': { 
+                                    color: esMiUsuario ? '#0056cc' : '#e67300',
+                                    bgcolor: esMiUsuario ? 'rgba(0,122,255,0.1)' : 'rgba(255,149,0,0.1)'
+                                  }
+                                }}
+                              >
+                                <KeyIcon fontSize="small" />
+                              </IconButton>
                             </Tooltip>
                             
                             {tienePermiso('eliminar') && !esMiUsuario ? (
@@ -1411,18 +1412,22 @@ const Usuarios = () => {
                                 <IconButton
                                   size="small"
                                   onClick={() => eliminarUsuario(usuario)}
-                                  sx={{ color: 'error.main' }}
+                                  sx={{ 
+                                    color: 'rgba(0,0,0,0.5)',
+                                    '&:hover': { 
+                                      color: '#ff3b30',
+                                      bgcolor: 'rgba(255,59,48,0.1)'
+                                    }
+                                  }}
                                 >
                                   <DeleteIcon fontSize="small" />
                                 </IconButton>
                               </Tooltip>
                             ) : (
                               <Tooltip title={esMiUsuario ? "No puedes eliminarte a ti mismo" : "Sin permisos para eliminar"}>
-                                <span>
-                                  <IconButton size="small" disabled>
-                                    <LockIcon fontSize="small" />
-                                  </IconButton>
-                                </span>
+                                <IconButton size="small" disabled sx={{ color: 'rgba(0,0,0,0.1)' }}>
+                                  <LockIcon fontSize="small" />
+                                </IconButton>
                               </Tooltip>
                             )}
                           </Stack>
@@ -1435,23 +1440,144 @@ const Usuarios = () => {
             </TableContainer>
           )}
         </Card>
+
+        {/* Botones de navegación inferiores */}
+        <Grid container spacing={2} sx={{ mt: 4 }}>
+          <Grid item xs={12} sm={6} md={3}>
+            <Button
+              fullWidth
+              variant="outlined"
+              startIcon={<StoreIcon />}
+              onClick={() => navigate('/shop')}
+              sx={{
+                borderColor: 'rgba(0,0,0,0.1)',
+                color: '#000',
+                borderRadius: 2,
+                py: 1.5,
+                fontWeight: 600,
+                textTransform: 'none',
+                '&:hover': {
+                  borderColor: '#000',
+                  bgcolor: 'rgba(0,0,0,0.02)'
+                }
+              }}
+            >
+              Ir a la Tienda
+            </Button>
+          </Grid>
+          <Grid item xs={12} sm={6} md={3}>
+            {/* NUEVO: Botón para Proveedores */}
+            <Button
+              fullWidth
+              variant="outlined"
+              startIcon={<LocalShippingIcon />}
+              onClick={irAProveedores}
+              sx={{
+                borderColor: 'rgba(0,0,0,0.1)',
+                color: '#000',
+                borderRadius: 2,
+                py: 1.5,
+                fontWeight: 600,
+                textTransform: 'none',
+                '&:hover': {
+                  borderColor: '#000',
+                  bgcolor: 'rgba(0,0,0,0.02)'
+                }
+              }}
+            >
+              Gestión de Proveedores
+            </Button>
+          </Grid>
+          <Grid item xs={12} sm={6} md={3}>
+            <Button
+              fullWidth
+              variant="outlined"
+              startIcon={<TrendingUpIcon />}
+              onClick={() => navigate('/reportes')}
+              sx={{
+                borderColor: 'rgba(0,0,0,0.1)',
+                color: '#000',
+                borderRadius: 2,
+                py: 1.5,
+                fontWeight: 600,
+                textTransform: 'none',
+                '&:hover': {
+                  borderColor: '#000',
+                  bgcolor: 'rgba(0,0,0,0.02)'
+                }
+              }}
+            >
+              Ver Reportes
+            </Button>
+          </Grid>
+          <Grid item xs={12} sm={6} md={3}>
+            <Button
+              fullWidth
+              variant="outlined"
+              startIcon={<ShieldIcon />}
+              onClick={() => navigate('/locations')}
+              sx={{
+                borderColor: 'rgba(0,0,0,0.1)',
+                color: '#000',
+                borderRadius: 2,
+                py: 1.5,
+                fontWeight: 600,
+                textTransform: 'none',
+                '&:hover': {
+                  borderColor: '#000',
+                  bgcolor: 'rgba(0,0,0,0.02)'
+                }
+              }}
+            >
+              Mi Ubicación
+            </Button>
+          </Grid>
+          {esAdministrador() && (
+            <Grid item xs={12} sm={6} md={3}>
+              <Button
+                fullWidth
+                variant="contained"
+                startIcon={<PaymentIcon />}
+                onClick={irAPagos}
+                sx={{
+                  bgcolor: '#000',
+                  color: '#fff',
+                  borderRadius: 2,
+                  py: 1.5,
+                  fontWeight: 600,
+                  textTransform: 'none',
+                  '&:hover': {
+                    bgcolor: '#1a1a1a',
+                    boxShadow: '0 8px 24px rgba(0,0,0,0.2)'
+                  }
+                }}
+              >
+                Administrar Pagos
+              </Button>
+            </Grid>
+          )}
+        </Grid>
       </Container>
 
-      {/* Formulario Modal */}
+      {/* Formulario Modal moderno */}
       <Dialog
         open={mostrarFormulario}
         onClose={cerrarFormulario}
         maxWidth="sm"
         fullWidth
         PaperProps={{
-          sx: { borderRadius: 3 }
+          sx: { 
+            borderRadius: 3,
+            border: '1px solid rgba(0,0,0,0.06)',
+            bgcolor: '#fff'
+          }
         }}
       >
-        <DialogTitle sx={{ pb: 1 }}>
-          <Typography variant="h5" sx={{ fontWeight: 600 }}>
+        <DialogTitle sx={{ pb: 1, pt: 3 }}>
+          <Typography variant="h5" sx={{ fontWeight: 800, color: '#000' }}>
             {editandoUsuario ? 'Editar Usuario' : 'Nuevo Usuario'}
           </Typography>
-          <Typography variant="body2" color="text.secondary">
+          <Typography variant="body2" sx={{ color: 'rgba(0,0,0,0.5)', mt: 0.5 }}>
             {editandoUsuario ? 'Modifica los datos del usuario' : 'Completa la información del nuevo usuario'}
           </Typography>
         </DialogTitle>
@@ -1466,7 +1592,7 @@ const Usuarios = () => {
                 required
                 value={formData.nombre}
                 onChange={(e) => handleCampoChange('nombre', e.target.value)}
-                placeholder="Ingresa el nombre completo (2-50 caracteres)"
+                placeholder="Ingresa el nombre completo"
                 error={!!erroresValidacion.nombre}
                 helperText={erroresValidacion.nombre || `${formData.nombre.length}/50 caracteres`}
                 inputProps={{ 
@@ -1478,9 +1604,14 @@ const Usuarios = () => {
                 }}
                 sx={{
                   '& .MuiOutlinedInput-root': {
+                    borderRadius: 2,
                     '&.Mui-focused fieldset': {
                       borderColor: getBorderColor('nombre'),
+                      borderWidth: 2
                     },
+                  },
+                  '& .MuiInputLabel-root.Mui-focused': {
+                    color: getBorderColor('nombre')
                   }
                 }}
               />
@@ -1505,9 +1636,14 @@ const Usuarios = () => {
                 }}
                 sx={{
                   '& .MuiOutlinedInput-root': {
+                    borderRadius: 2,
                     '&.Mui-focused fieldset': {
                       borderColor: getBorderColor('email'),
+                      borderWidth: 2
                     },
+                  },
+                  '& .MuiInputLabel-root.Mui-focused': {
+                    color: getBorderColor('email')
                   }
                 }}
               />
@@ -1521,14 +1657,14 @@ const Usuarios = () => {
                   required={!editandoUsuario}
                   value={formData.password}
                   onChange={(e) => handleCampoChange('password', e.target.value)}
-                  placeholder="Mínimo 8 caracteres con mayúsculas, minúsculas, números y símbolos"
+                  placeholder="Mínimo 8 caracteres con diferentes tipos"
                   error={!!erroresValidacion.password}
                   helperText={erroresValidacion.password || `${formData.password.length}/128 caracteres`}
                   inputProps={{ 
                     maxLength: 128,
                     minLength: 8,
                     pattern: VALIDACIONES.password.pattern.source
-                  }}
+                }}
                   InputProps={{
                     endAdornment: (
                       <InputAdornment position="end">
@@ -1537,6 +1673,7 @@ const Usuarios = () => {
                           aria-label="toggle password visibility"
                           onClick={() => setMostrarPassword(!mostrarPassword)}
                           edge="end"
+                          sx={{ color: 'rgba(0,0,0,0.3)' }}
                         >
                           {mostrarPassword ? <VisibilityOffIcon /> : <VisibilityIcon />}
                         </IconButton>
@@ -1545,9 +1682,14 @@ const Usuarios = () => {
                   }}
                   sx={{
                     '& .MuiOutlinedInput-root': {
+                      borderRadius: 2,
                       '&.Mui-focused fieldset': {
                         borderColor: getBorderColor('password'),
+                        borderWidth: 2
                       },
+                    },
+                    '& .MuiInputLabel-root.Mui-focused': {
+                      color: getBorderColor('password')
                     }
                   }}
                 />
@@ -1560,14 +1702,34 @@ const Usuarios = () => {
                 variant="outlined"
                 value={formData.rol}
                 onChange={(e) => setFormData({ ...formData, rol: e.target.value })}
+                sx={{
+                  '& .MuiOutlinedInput-root': {
+                    borderRadius: 2
+                  }
+                }}
               >
                 {rolesDisponibles.map((rol) => (
-                  <MenuItem key={rol.value} value={rol.value}>
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                      {rol.icon}
+                  <MenuItem key={rol.value} value={rol.value} sx={{ py: 1.5 }}>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                      <Box
+                        sx={{
+                          width: 32,
+                          height: 32,
+                          borderRadius: 1,
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          background: rol.gradient,
+                          color: '#fff'
+                        }}
+                      >
+                        {rol.icon}
+                      </Box>
                       <Box>
-                        <Typography variant="body2">{rol.label}</Typography>
-                        <Typography variant="caption" color="text.secondary">
+                        <Typography variant="body2" sx={{ fontWeight: 600, color: '#000' }}>
+                          {rol.label}
+                        </Typography>
+                        <Typography variant="caption" sx={{ color: 'rgba(0,0,0,0.5)' }}>
                           {rol.description}
                         </Typography>
                       </Box>
@@ -1581,17 +1743,40 @@ const Usuarios = () => {
           <DialogActions sx={{ p: 3, pt: 2 }}>
             <Button
               onClick={cerrarFormulario}
-              startIcon={<CloseIcon />}
-              sx={{ mr: 1 }}
+              sx={{ 
+                mr: 1,
+                color: 'rgba(0,0,0,0.5)',
+                fontWeight: 600,
+                textTransform: 'none',
+                '&:hover': {
+                  color: '#000',
+                  bgcolor: 'rgba(0,0,0,0.04)'
+                }
+              }}
             >
               Cancelar
             </Button>
             <Button
               type="submit"
               variant="contained"
-              startIcon={loading ? <CircularProgress size={16} /> : <SaveIcon />}
+              startIcon={loading ? <CircularProgress size={16} sx={{ color: '#fff' }} /> : <SaveIcon />}
               disabled={loading || Object.values(erroresValidacion).some(error => error !== '')}
-              sx={{ borderRadius: 2 }}
+              sx={{ 
+                borderRadius: 2,
+                bgcolor: '#000',
+                color: '#fff',
+                px: 3,
+                fontWeight: 600,
+                textTransform: 'none',
+                '&:hover': {
+                  bgcolor: '#1a1a1a',
+                  boxShadow: '0 8px 24px rgba(0,0,0,0.2)'
+                },
+                '&.Mui-disabled': {
+                  bgcolor: 'rgba(0,0,0,0.1)',
+                  color: 'rgba(0,0,0,0.3)'
+                }
+              }}
             >
               {editandoUsuario ? 'Actualizar' : 'Crear Usuario'}
             </Button>
@@ -1599,7 +1784,7 @@ const Usuarios = () => {
         </form>
       </Dialog>
 
-      {/* FAB para agregar usuario en móviles - solo si tiene permisos */}
+      {/* FAB para móviles */}
       {tienePermiso('crear') && (
         <Fab
           color="primary"
@@ -1607,14 +1792,31 @@ const Usuarios = () => {
           onClick={abrirFormularioNuevo}
           sx={{
             position: 'fixed',
-            bottom: 16,
-            right: 16,
-            display: { xs: 'flex', sm: 'none' }
+            bottom: 24,
+            right: 24,
+            display: { xs: 'flex', sm: 'none' },
+            bgcolor: '#000',
+            color: '#fff',
+            '&:hover': { bgcolor: '#1a1a1a' }
           }}
         >
           <AddIcon />
         </Fab>
       )}
+
+      {/* Footer minimalista */}
+      <Box sx={{ 
+        mt: 8, 
+        py: 3, 
+        borderTop: '1px solid rgba(0,0,0,0.06)',
+        bgcolor: '#fff'
+      }}>
+        <Container maxWidth="xl">
+          <Typography variant="caption" sx={{ color: 'rgba(0,0,0,0.4)', display: 'block', textAlign: 'center' }}>
+            GameStore Admin v1.0 • Sistema de gestión para tienda de videojuegos
+          </Typography>
+        </Container>
+      </Box>
     </Box>
   );
 };

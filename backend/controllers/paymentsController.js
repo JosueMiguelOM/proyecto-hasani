@@ -453,28 +453,83 @@ exports.createPayPalOrder = async (req, res) => {
 };
 
 // Función auxiliar para restar stock CON VERIFICACIÓN DE ALERTAS
+// Función auxiliar para restar stock CON VERIFICACIÓN DE ALERTAS - VERSIÓN CORREGIDA
 const decreaseInventoryStock = async (items) => {
+  console.log('📊 Iniciando actualización de stock para items:', JSON.stringify(items));
+  
   try {
+    // Iniciar transacción
+    await query('BEGIN');
+    
     for (const item of items) {
-      await query(`
-        UPDATE productos 
-        SET stock = stock - $1 
-        WHERE id = $2 AND stock >= $1
-      `, [item.quantity || item.productId ? 1 : 0, item.productId]);
+      console.log(`🔄 Procesando producto ID: ${item.productId}, cantidad: ${item.quantity}`);
+      
+      // 1. Validar que el producto existe y tiene stock suficiente
+      const productCheck = await query(
+        'SELECT id, nombre, stock, stock_minimo, codigo FROM productos WHERE id = $1 AND activo = true',
+        [item.productId]
+      );
 
-      // Registrar movimiento de salida
+      if (productCheck.rows.length === 0) {
+        throw new Error(`Producto ID ${item.productId} no encontrado o inactivo`);
+      }
+
+      const product = productCheck.rows[0];
+      
+      if (product.stock < item.quantity) {
+        throw new Error(`Stock insuficiente para "${product.nombre}". Disponible: ${product.stock}, Requerido: ${item.quantity}`);
+      }
+
+      // 2. Restar stock
+      const updateResult = await query(
+        'UPDATE productos SET stock = stock - $1, fecha_actualizacion = NOW() WHERE id = $2 RETURNING stock',
+        [item.quantity, item.productId]
+      );
+
+      console.log(`✅ Stock actualizado para "${product.nombre}". Nuevo stock: ${updateResult.rows[0].stock}`);
+
+      // 3. Registrar movimiento de salida
+      const reference = `PAY-${Date.now()}`;
+      const document = `PAGO-${Date.now()}`;
+      
       await query(`
         INSERT INTO movimientos_inventario 
-        (tipo, id_producto, cantidad, referencia, documento, responsable, observaciones)
-        VALUES ('salida', $1, $2, $3, $4, 'Sistema', 'Venta por PayPal')
-      `, [item.productId, item.quantity, `PAY-${Date.now()}`, `PAGO-${Date.now()}`]);
+        (tipo, id_producto, cantidad, referencia, documento, responsable, observaciones, fecha)
+        VALUES ('salida', $1, $2, $3, $4, 'Sistema', 'Venta por PayPal', NOW())
+      `, [item.productId, item.quantity, reference, document]);
+
+      console.log(`📝 Movimiento registrado para producto ${item.productId}`);
+
+      // 4. Verificar y registrar alerta si es necesario
+      const newStock = updateResult.rows[0].stock;
+      if (newStock <= product.stock_minimo) {
+        const alertType = newStock < product.stock_minimo ? 'critico' : 'alerta';
+        
+        await query(`
+          INSERT INTO alertas_stock 
+          (id_producto, codigo_producto, nombre_producto, stock_actual, stock_minimo, tipo_alerta, enviada, fecha_alerta)
+          VALUES ($1, $2, $3, $4, $5, $6, false, NOW())
+        `, [product.id, product.codigo, product.nombre, newStock, product.stock_minimo, alertType]);
+
+        console.log(`⚠️ Alerta de stock ${alertType} registrada para "${product.nombre}"`);
+        
+        // Opcional: Enviar email de alerta (si tienes configurado)
+        // await checkAndSendLowStockAlerts([{ productId: item.productId, quantity: item.quantity }]);
+      }
     }
 
-    // VERIFICAR Y ENVIAR ALERTAS DE STOCK BAJO
-    await checkAndSendLowStockAlerts(items);
+    // Confirmar transacción
+    await query('COMMIT');
+    console.log('🎉 Transacción completada exitosamente');
+    
   } catch (error) {
-    console.error('Error actualizando stock:', error);
-    throw error;
+    // Revertir transacción en caso de error
+    await query('ROLLBACK').catch(rollbackError => {
+      console.error('❌ Error haciendo rollback:', rollbackError);
+    });
+    
+    console.error('❌ Error en decreaseInventoryStock:', error);
+    throw error; // Re-lanzar el error para que lo maneje la función llamadora
   }
 };
 

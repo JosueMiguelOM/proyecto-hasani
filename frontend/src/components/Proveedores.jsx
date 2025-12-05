@@ -31,7 +31,12 @@ import {
   Grid,
   InputAdornment,
   Collapse,
-  AlertTitle
+  AlertTitle,
+  Fade,
+  Backdrop,
+  Badge,
+  alpha,
+  Fab
 } from '@mui/material';
 import {
   Add as AddIcon,
@@ -48,14 +53,22 @@ import {
   Refresh as RefreshIcon,
   ContactPhone as ContactPhoneIcon,
   Error as ErrorIcon,
-  CheckCircle as CheckCircleIcon
+  CheckCircle as CheckCircleIcon,
+  Notifications as NotificationsIcon,
+  Check as CheckIcon,
+  LocalShipping as LocalShippingIcon,
+  Store as StoreIcon,
+  TrendingUp as TrendingUpIcon,
+  Shield as ShieldIcon,
+  Logout as LogoutIcon,
+  Games as GamesIcon
 } from '@mui/icons-material';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 
 const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
 
-// Configuración de validaciones
+// Configuración de validaciones (sin cambios)
 const VALIDACIONES = {
   nombre: {
     minLength: 2,
@@ -94,9 +107,47 @@ const VALIDACIONES = {
   }
 };
 
+// Componente de notificaciones (versión simplificada)
+const NotificationBell = () => {
+  const [anchorEl, setAnchorEl] = useState(null);
+  const open = Boolean(anchorEl);
 
+  const handleClick = (event) => {
+    setAnchorEl(event.currentTarget);
+  };
 
-// Función de validación robusta
+  const handleClose = () => {
+    setAnchorEl(null);
+  };
+
+  return (
+    <IconButton
+      onClick={handleClick}
+      sx={{ 
+        position: 'relative',
+        bgcolor: 'transparent',
+        '&:hover': { bgcolor: 'rgba(0,0,0,0.04)' }
+      }}
+    >
+      <Badge 
+        badgeContent={0} 
+        color="error" 
+        max={99}
+        sx={{
+          '& .MuiBadge-badge': {
+            fontSize: '0.6rem',
+            height: 18,
+            minWidth: 18
+          }
+        }}
+      >
+        <NotificationsIcon sx={{ color: '#000' }} />
+      </Badge>
+    </IconButton>
+  );
+};
+
+// Función de validación robusta (sin cambios)
 const validarCampo = (campo, valor) => {
   const config = VALIDACIONES[campo];
   if (!config) return { valido: true, mensaje: '' };
@@ -122,15 +173,6 @@ const validarCampo = (campo, valor) => {
     };
   }
 
-  // En la función validarCampo, para el caso del teléfono:
-if (campo === 'telefono' && valor.trim()) {
-  // Remover espacios para validar
-  const telefonoLimpio = valor.replace(/\s/g, '');
-  
-  // Validar que empiece con +52 y tenga exactamente 10 dígitos después
-  
-}
-
   // Validar patrón si existe
   if (config.pattern && !config.pattern.test(valor)) {
     return { 
@@ -139,24 +181,20 @@ if (campo === 'telefono' && valor.trim()) {
     };
   }
 
-
-
   return { valido: true, mensaje: '' };
 };
 
-// Función para sanitizar entrada
+// Función para sanitizar entrada (sin cambios)
 const sanitizarEntrada = (valor, maxLength = 100) => {
   if (typeof valor !== 'string') return '';
   
-  // Remover caracteres especiales peligrosos
   let sanitized = valor
-    .replace(/[<>]/g, '') // Remover < y >
-    .replace(/javascript:/gi, '') // Remover javascript:
-    .replace(/on\w+=/gi, '') // Remover eventos como onclick, onload, etc.
-    .replace(/'/g, '') // Remover comillas simples
-    .replace(/"/g, ''); // Remover comillas dobles
+    .replace(/[<>]/g, '')
+    .replace(/javascript:/gi, '')
+    .replace(/on\w+=/gi, '')
+    .replace(/'/g, '')
+    .replace(/"/g, '');
   
-  // Limitar longitud
   if (sanitized.length > maxLength) {
     sanitized = sanitized.substring(0, maxLength);
   }
@@ -172,17 +210,18 @@ const Proveedores = () => {
   const [success, setSuccess] = useState(null);
   const [mostrarFormulario, setMostrarFormulario] = useState(false);
   const [editandoProveedor, setEditandoProveedor] = useState(null);
-const [formData, setFormData] = useState({
-  nombre: '',
-  telefono: '', // Teléfono completo (lada + número)
-  lada: '+52',  // Lada por separado
-  numeroTelefono: '', // Solo el número sin lada
-  contacto: '',
-  email: '',
-  direccion: ''
-});
+  const [user, setUser] = useState(null);
+  
+  const [formData, setFormData] = useState({
+    nombre: '',
+    telefono: '',
+    lada: '+52',
+    numeroTelefono: '',
+    contacto: '',
+    email: '',
+    direccion: ''
+  });
 
-  // Estados de validación
   const [erroresValidacion, setErroresValidacion] = useState({
     nombre: '',
     telefono: '',
@@ -190,6 +229,21 @@ const [formData, setFormData] = useState({
     email: '',
     direccion: ''
   });
+
+  useEffect(() => {
+    const token = localStorage.getItem('token');
+    if (token) {
+      axios.get(`${API_URL}/auth/me`, {
+        headers: { Authorization: `Bearer ${token}` }
+      })
+      .then(res => {
+        setUser(res.data.data);
+      })
+      .catch(() => {
+        setUser(null);
+      });
+    }
+  }, []);
 
   useEffect(() => {
     cargarProveedores();
@@ -226,7 +280,6 @@ const [formData, setFormData] = useState({
     }
   };
 
-  // Función de validación en tiempo real
   const validarCampoEnTiempoReal = (campo, valor) => {
     const resultado = validarCampo(campo, valor);
     setErroresValidacion(prev => ({
@@ -236,34 +289,25 @@ const [formData, setFormData] = useState({
     return resultado.valido;
   };
 
-  // Manejar cambio en los campos con validación
   const handleCampoChange = (campo, valor) => {
-    // Sanitizar entrada
     const valorSanitizado = sanitizarEntrada(valor, VALIDACIONES[campo]?.maxLength || 100);
-    
-    // Validar en tiempo real
     validarCampoEnTiempoReal(campo, valorSanitizado);
-    
-    // Actualizar estado
     setFormData(prev => ({
       ...prev,
       [campo]: valorSanitizado
     }));
   };
 
-  // Validar formulario completo
   const validarFormulario = () => {
     const nuevosErrores = {};
     let esValido = true;
 
-    // Validar nombre (obligatorio)
     const nombreValido = validarCampoEnTiempoReal('nombre', formData.nombre);
     if (!nombreValido) {
       nuevosErrores.nombre = erroresValidacion.nombre;
       esValido = false;
     }
 
-    // Validar contacto (opcional)
     if (formData.contacto.trim()) {
       const contactoValido = validarCampoEnTiempoReal('contacto', formData.contacto);
       if (!contactoValido) {
@@ -272,7 +316,6 @@ const [formData, setFormData] = useState({
       }
     }
 
-    // Validar teléfono (opcional)
     if (formData.telefono.trim()) {
       const telefonoValido = validarCampoEnTiempoReal('telefono', formData.telefono);
       if (!telefonoValido) {
@@ -281,7 +324,6 @@ const [formData, setFormData] = useState({
       }
     }
 
-    // Validar email (opcional)
     if (formData.email.trim()) {
       const emailValido = validarCampoEnTiempoReal('email', formData.email);
       if (!emailValido) {
@@ -290,7 +332,6 @@ const [formData, setFormData] = useState({
       }
     }
 
-    // Validar dirección (opcional)
     if (formData.direccion.trim()) {
       const direccionValido = validarCampoEnTiempoReal('direccion', formData.direccion);
       if (!direccionValido) {
@@ -306,7 +347,6 @@ const [formData, setFormData] = useState({
   const handleSubmit = async (e) => {
     e.preventDefault();
     
-    // Validar formulario antes de enviar
     if (!validarFormulario()) {
       mostrarMensaje('Por favor corrige los errores en el formulario', 'error');
       return;
@@ -357,6 +397,8 @@ const [formData, setFormData] = useState({
     setFormData({
       nombre: '',
       telefono: '',
+      lada: '+52',
+      numeroTelefono: '',
       contacto: '',
       email: '',
       direccion: ''
@@ -373,27 +415,26 @@ const [formData, setFormData] = useState({
   };
 
   const abrirFormularioEditar = (proveedor) => {
-  let lada = '+52';
-  let numeroTelefono = '';
-  
-  if (proveedor.telefono) {
-    // Extraer lada y número del teléfono existente
-    const match = proveedor.telefono.match(/^(\+\d+)(\d+)$/);
-    if (match) {
-      lada = match[1];
-      numeroTelefono = match[2];
+    let lada = '+52';
+    let numeroTelefono = '';
+    
+    if (proveedor.telefono) {
+      const match = proveedor.telefono.match(/^(\+\d+)(\d+)$/);
+      if (match) {
+        lada = match[1];
+        numeroTelefono = match[2];
+      }
     }
-  }
-  
-  setFormData({
-    nombre: proveedor.nombre || '',
-    telefono: proveedor.telefono || '',
-    lada: lada,
-    numeroTelefono: numeroTelefono,
-    contacto: proveedor.contacto || '',
-    email: proveedor.email || '',
-    direccion: proveedor.direccion || ''
-  });
+    
+    setFormData({
+      nombre: proveedor.nombre || '',
+      telefono: proveedor.telefono || '',
+      lada: lada,
+      numeroTelefono: numeroTelefono,
+      contacto: proveedor.contacto || '',
+      email: proveedor.email || '',
+      direccion: proveedor.direccion || ''
+    });
     setEditandoProveedor(proveedor);
     setMostrarFormulario(true);
   };
@@ -404,6 +445,8 @@ const [formData, setFormData] = useState({
     setFormData({
       nombre: '',
       telefono: '',
+      lada: '+52',
+      numeroTelefono: '',
       contacto: '',
       email: '',
       direccion: ''
@@ -422,6 +465,15 @@ const [formData, setFormData] = useState({
     return nombre.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
   };
 
+  const getAvatarColor = (nombre) => {
+    const colors = [
+      '#007aff', '#5856d6', '#ff2d55', '#ff9500', 
+      '#34c759', '#5ac8fa', '#ffcc00', '#af52de'
+    ];
+    const index = nombre.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
+    return colors[index % colors.length];
+  };
+
   const formatearFecha = (fecha) => {
     if (!fecha) return 'N/A';
     return new Date(fecha).toLocaleDateString('es-ES', {
@@ -431,25 +483,22 @@ const [formData, setFormData] = useState({
     });
   };
 
-  // Función para obtener el color del borde del campo según la validación
   const getBorderColor = (campo) => {
-    if (erroresValidacion[campo]) return 'error.main';
-    if (formData[campo] && !erroresValidacion[campo]) return 'success.main';
-    return 'grey.400';
+    if (erroresValidacion[campo]) return '#ff3b30';
+    if (formData[campo] && !erroresValidacion[campo]) return '#34c759';
+    return '#c7c7cc';
   };
 
-  // Función para obtener el icono de validación
   const getValidationIcon = (campo) => {
     if (erroresValidacion[campo]) {
-      return <ErrorIcon color="error" fontSize="small" />;
+      return <ErrorIcon sx={{ color: '#ff3b30' }} fontSize="small" />;
     }
     if (formData[campo] && !erroresValidacion[campo]) {
-      return <CheckCircleIcon color="success" fontSize="small" />;
+      return <CheckCircleIcon sx={{ color: '#34c759' }} fontSize="small" />;
     }
     return null;
   };
 
-  // Función para obtener el texto de ayuda del campo
   const getHelperText = (campo) => {
     const config = VALIDACIONES[campo];
     if (!config) return '';
@@ -468,102 +517,384 @@ const [formData, setFormData] = useState({
     return length > 0 ? `${length}/${maxLength} caracteres` : '(opcional)';
   };
 
+  const handleLogout = () => {
+    localStorage.removeItem('token');
+    window.location.href = '/';
+  };
+
+  const styles = {
+    container: {
+      minHeight: '100vh',
+      backgroundColor: '#f5f5f7',
+      fontFamily: "'Inter', 'Segoe UI', sans-serif"
+    },
+    appBar: {
+      bgcolor: '#fff',
+      borderBottom: '1px solid rgba(0,0,0,0.06)',
+      backdropFilter: 'blur(20px)',
+      WebkitBackdropFilter: 'blur(20px)'
+    },
+    title: {
+      fontWeight: 700,
+      color: '#000',
+      letterSpacing: '-0.5px'
+    },
+    messageContainer: {
+      position: 'fixed',
+      top: '20px',
+      right: '20px',
+      zIndex: '1000',
+      animation: 'slideIn 0.3s ease-out'
+    },
+    message: {
+      padding: '16px 24px',
+      backgroundColor: '#000',
+      color: '#fff',
+      borderRadius: '8px',
+      boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
+      fontSize: '14px',
+      fontWeight: '500',
+      display: 'flex',
+      alignItems: 'center',
+      gap: '10px'
+    }
+  };
+
   return (
-    <Box sx={{ minHeight: '100vh', bgcolor: 'grey.50' }}>
-      <AppBar position="static" sx={{ background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' }} elevation={2}>
-        <Toolbar>
-          <IconButton color="inherit" onClick={() => navigate(-1)} sx={{ mr: 2 }}>
-            <ArrowBackIcon />
-          </IconButton>
-          <BusinessIcon sx={{ mr: 2 }} />
-          <Typography variant="h6" sx={{ flexGrow: 1 }}>
-            Gestión de Proveedores
-          </Typography>
-          <Tooltip title="Actualizar">
-            <IconButton color="inherit" onClick={cargarProveedores}>
-              <RefreshIcon />
-            </IconButton>
-          </Tooltip>
+    <Box sx={styles.container}>
+      <style>{`
+        @keyframes slideIn {
+          from { transform: translateX(100%); opacity: 0; }
+          to { transform: translateX(0); opacity: 1; }
+        }
+        @keyframes slideDown {
+          from { max-height: 0; opacity: 0; }
+          to { max-height: 500px; opacity: 1; }
+        }
+      `}</style>
+      
+      {error && (
+        <Box sx={styles.messageContainer}>
+          <Box sx={styles.message}>
+            ❌ {error}
+          </Box>
+        </Box>
+      )}
+      
+      {success && (
+        <Box sx={styles.messageContainer}>
+          <Box sx={styles.message}>
+            ✅ {success}
+          </Box>
+        </Box>
+      )}
+
+      {/* AppBar moderno */}
+      <AppBar position="sticky" elevation={0} sx={styles.appBar}>
+        <Toolbar sx={{ minHeight: 64 }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexGrow: 1 }}>
+            <GamesIcon sx={{ color: '#000', fontSize: 28 }} />
+            <Typography variant="h6" sx={styles.title}>
+              GameStore Admin
+            </Typography>
+            <Chip 
+              label="Beta" 
+              size="small" 
+              sx={{ 
+                height: 20, 
+                fontSize: '0.65rem',
+                fontWeight: 600,
+                bgcolor: 'rgba(0,122,255,0.1)',
+                color: '#007aff',
+                border: 'none'
+              }}
+            />
+          </Box>
+          
+          <NotificationBell />
+
+          {user && (
+            <>
+              {/* Menú de navegación rápido */}
+              <Stack direction="row" spacing={1} sx={{ mr: 3 }}>
+                <Tooltip title="Usuarios">
+                  <IconButton 
+                    onClick={() => navigate('/Usuarios')}
+                    sx={{ 
+                      color: '#000',
+                      '&:hover': { bgcolor: 'rgba(0,0,0,0.04)' }
+                    }}
+                  >
+                    <PersonIcon />
+                  </IconButton>
+                </Tooltip>
+                
+                <Tooltip title="Tienda">
+                  <IconButton 
+                    onClick={() => navigate('/shop')}
+                    sx={{ 
+                      color: '#000',
+                      '&:hover': { bgcolor: 'rgba(0,0,0,0.04)' }
+                    }}
+                  >
+                    <StoreIcon />
+                  </IconButton>
+                </Tooltip>
+                
+                <Tooltip title="Reportes">
+                  <IconButton 
+                    onClick={() => navigate('/reportes')}
+                    sx={{ 
+                      color: '#000',
+                      '&:hover': { bgcolor: 'rgba(0,0,0,0.04)' }
+                    }}
+                  >
+                    <TrendingUpIcon />
+                  </IconButton>
+                </Tooltip>
+              </Stack>
+
+              {/* Perfil de usuario */}
+              <Box sx={{ 
+                display: 'flex', 
+                alignItems: 'center', 
+                gap: 1.5,
+                bgcolor: 'rgba(0,0,0,0.02)',
+                borderRadius: 3,
+                px: 2,
+                py: 0.5,
+                cursor: 'pointer',
+                '&:hover': { bgcolor: 'rgba(0,0,0,0.04)' }
+              }}>
+                <Avatar 
+                  sx={{ 
+                    width: 32, 
+                    height: 32, 
+                    bgcolor: getAvatarColor(user.nombre || ''),
+                    fontSize: '0.875rem',
+                    fontWeight: 600
+                  }}
+                >
+                  {getInitials(user.nombre || '')}
+                </Avatar>
+                <Box>
+                  <Typography variant="subtitle2" sx={{ fontWeight: 600, color: '#000' }}>
+                    {user.nombre?.split(' ')[0] || 'Usuario'}
+                  </Typography>
+                  <Typography variant="caption" sx={{ color: 'rgba(0,0,0,0.5)', display: 'block' }}>
+                    {user.rol || 'Sin rol'}
+                  </Typography>
+                </Box>
+                <IconButton 
+                  size="small" 
+                  onClick={handleLogout}
+                  sx={{ color: '#000' }}
+                >
+                  <LogoutIcon fontSize="small" />
+                </IconButton>
+              </Box>
+            </>
+          )}
         </Toolbar>
       </AppBar>
 
-      <Container maxWidth="xl" sx={{ py: 4 }}>
-        <Collapse in={!!error}>
-          <Alert severity="error" onClose={() => setError(null)} sx={{ mb: 3, borderRadius: 2 }}>
-            <AlertTitle>Error</AlertTitle>
-            {error}
-          </Alert>
-        </Collapse>
+      <Backdrop
+        sx={{ color: '#fff', zIndex: (theme) => theme.zIndex.drawer + 1 }}
+        open={loading && proveedores.length === 0}
+      >
+        <CircularProgress color="inherit" />
+      </Backdrop>
 
-        <Collapse in={!!success}>
-          <Alert severity="success" onClose={() => setSuccess(null)} sx={{ mb: 3, borderRadius: 2 }}>
-            <AlertTitle>Éxito</AlertTitle>
-            {success}
-          </Alert>
-        </Collapse>
-
-        {/* Header con estadísticas */}
-        <Card sx={{ mb: 3, background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)', color: 'white' }}>
-          <CardContent>
-            <Grid container spacing={3} alignItems="center">
-              <Grid item xs={12} md={8}>
-                <Typography variant="h4" sx={{ fontWeight: 700, mb: 1 }}>
-                  Proveedores Registrados
-                </Typography>
-                <Typography variant="body1" sx={{ opacity: 0.9 }}>
-                  Administra la información de tus proveedores
-                </Typography>
-              </Grid>
-              <Grid item xs={12} md={4} sx={{ textAlign: { xs: 'left', md: 'right' } }}>
-                <Box sx={{ display: 'inline-block', bgcolor: 'rgba(255,255,255,0.2)', borderRadius: 2, p: 2 }}>
-                  <Typography variant="h3" sx={{ fontWeight: 700 }}>
-                    {proveedores.length}
-                  </Typography>
-                  <Typography variant="body2">Total de Proveedores</Typography>
-                </Box>
-              </Grid>
-            </Grid>
-          </CardContent>
-        </Card>
-
-        {/* Botón para agregar */}
-        <Box sx={{ mb: 3, display: 'flex', justifyContent: 'flex-end' }}>
-          <Button
-            variant="contained"
-            size="large"
-            startIcon={<AddIcon />}
-            onClick={abrirFormularioNuevo}
-            disabled={loading}
-            sx={{
-              borderRadius: 2,
-              px: 3,
-              py: 1.5,
-              boxShadow: 3
+      {/* Contenido principal */}
+      <Container maxWidth="xl" sx={{ py: 3 }}>
+        {/* Header con título */}
+        <Box sx={{ mb: 4 }}>
+          <Typography 
+            variant="h4" 
+            sx={{ 
+              fontWeight: 800, 
+              color: '#000',
+              mb: 1,
+              fontSize: { xs: '1.75rem', md: '2.125rem' }
             }}
           >
-            Nuevo Proveedor
-          </Button>
+            Gestión de Proveedores
+          </Typography>
+          <Typography variant="body1" sx={{ color: 'rgba(0,0,0,0.6)', maxWidth: 600 }}>
+            Administra la información de tus proveedores para mantener un inventario eficiente
+          </Typography>
         </Box>
 
-        {/* Tabla de proveedores */}
-        <Card elevation={0} sx={{ borderRadius: 3, border: 1, borderColor: 'divider' }}>
+        {/* Estadísticas */}
+        <Fade in={proveedores.length > 0}>
+          <Grid container spacing={2} sx={{ mb: 4 }}>
+            <Grid item xs={12} sm={4}>
+              <Card
+                elevation={0}
+                sx={{
+                  borderRadius: 3,
+                  border: '1px solid rgba(0,0,0,0.06)',
+                  bgcolor: '#fff',
+                  height: '100%',
+                  transition: 'all 0.2s ease',
+                  '&:hover': {
+                    transform: 'translateY(-2px)',
+                    boxShadow: '0 8px 24px rgba(0,0,0,0.08)'
+                  }
+                }}
+              >
+                <CardContent sx={{ p: 3 }}>
+                  <Box sx={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
+                    <Box>
+                      <Typography 
+                        variant="body2" 
+                        sx={{ 
+                          fontWeight: 600, 
+                          color: 'rgba(0,0,0,0.5)',
+                          textTransform: 'uppercase',
+                          letterSpacing: '0.5px',
+                          mb: 1
+                        }}
+                      >
+                        Total
+                      </Typography>
+                      <Typography 
+                        variant="h2" 
+                        sx={{ 
+                          fontWeight: 800, 
+                          color: '#000',
+                          fontSize: '3rem',
+                          lineHeight: 1
+                        }}
+                      >
+                        {proveedores.length}
+                      </Typography>
+                    </Box>
+                    <Box
+                      sx={{
+                        width: 48,
+                        height: 48,
+                        borderRadius: 2,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        bgcolor: 'rgba(0,0,0,0.1)',
+                        color: '#000'
+                      }}
+                    >
+                      <LocalShippingIcon />
+                    </Box>
+                  </Box>
+                  <Typography 
+                    variant="caption" 
+                    sx={{ 
+                      color: 'rgba(0,0,0,0.5)', 
+                      display: 'block',
+                      mt: 2
+                    }}
+                  >
+                    Proveedores registrados
+                  </Typography>
+                </CardContent>
+              </Card>
+            </Grid>
+          </Grid>
+        </Fade>
+
+        {/* Panel de acciones */}
+        <Box sx={{ 
+          display: 'flex', 
+          justifyContent: 'space-between', 
+          alignItems: 'center',
+          mb: 3 
+        }}>
+          <Typography variant="h6" sx={{ fontWeight: 700, color: '#000' }}>
+            Todos los Proveedores
+            <Typography component="span" sx={{ color: 'rgba(0,0,0,0.5)', ml: 1, fontWeight: 400 }}>
+              ({proveedores.length} registrados)
+            </Typography>
+          </Typography>
+          
+          <Stack direction="row" spacing={1}>
+            <Button
+              variant="outlined"
+              startIcon={<RefreshIcon />}
+              onClick={cargarProveedores}
+              disabled={loading}
+              sx={{
+                borderColor: 'rgba(0,0,0,0.1)',
+                color: '#000',
+                borderRadius: 2,
+                px: 3,
+                py: 1,
+                fontWeight: 600,
+                '&:hover': {
+                  borderColor: '#000',
+                  bgcolor: 'rgba(0,0,0,0.02)'
+                }
+              }}
+            >
+              Actualizar
+            </Button>
+            
+            <Button
+              variant="contained"
+              startIcon={<AddIcon />}
+              onClick={abrirFormularioNuevo}
+              disabled={loading}
+              sx={{
+                bgcolor: '#000',
+                color: '#fff',
+                borderRadius: 2,
+                px: 3,
+                py: 1,
+                fontWeight: 600,
+                '&:hover': {
+                  bgcolor: '#1a1a1a',
+                  boxShadow: '0 8px 24px rgba(0,0,0,0.2)'
+                }
+              }}
+            >
+              Nuevo Proveedor
+            </Button>
+          </Stack>
+        </Box>
+
+        {/* Tabla de proveedores moderna */}
+        <Card
+          elevation={0}
+          sx={{
+            borderRadius: 3,
+            border: '1px solid rgba(0,0,0,0.06)',
+            bgcolor: '#fff',
+            overflow: 'hidden'
+          }}
+        >
           {loading && proveedores.length === 0 ? (
             <Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}>
-              <CircularProgress />
+              <CircularProgress sx={{ color: '#000' }} />
             </Box>
           ) : proveedores.length === 0 ? (
             <Box sx={{ textAlign: 'center', py: 8 }}>
-              <BusinessIcon sx={{ fontSize: 64, color: 'grey.400', mb: 2 }} />
-              <Typography variant="h6" color="text.secondary" gutterBottom>
+              <LocalShippingIcon sx={{ fontSize: 64, color: 'rgba(0,0,0,0.1)', mb: 2 }} />
+              <Typography variant="h6" sx={{ color: 'rgba(0,0,0,0.5)', mb: 1, fontWeight: 600 }}>
                 No hay proveedores registrados
               </Typography>
-              <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
+              <Typography variant="body2" sx={{ color: 'rgba(0,0,0,0.4)', mb: 3 }}>
                 Comienza agregando tu primer proveedor
               </Typography>
               <Button
                 variant="contained"
                 startIcon={<AddIcon />}
                 onClick={abrirFormularioNuevo}
+                sx={{
+                  bgcolor: '#000',
+                  color: '#fff',
+                  borderRadius: 2,
+                  px: 3,
+                  py: 1,
+                  fontWeight: 600
+                }}
               >
                 Agregar Proveedor
               </Button>
@@ -572,83 +903,122 @@ const [formData, setFormData] = useState({
             <TableContainer>
               <Table>
                 <TableHead>
-                  <TableRow sx={{ bgcolor: 'grey.50' }}>
-                    <TableCell sx={{ fontWeight: 600 }}>Proveedor</TableCell>
-                    <TableCell sx={{ fontWeight: 600 }}>Contacto</TableCell>
-                    <TableCell sx={{ fontWeight: 600 }}>Información</TableCell>
-                    <TableCell sx={{ fontWeight: 600 }}>Fecha Registro</TableCell>
-                    <TableCell align="center" sx={{ fontWeight: 600 }}>Estado</TableCell>
-                    <TableCell align="center" sx={{ fontWeight: 600 }}>Acciones</TableCell>
+                  <TableRow sx={{ bgcolor: 'rgba(0,0,0,0.02)' }}>
+                    <TableCell sx={{ fontWeight: 700, color: '#000', py: 2 }}>Proveedor</TableCell>
+                    <TableCell sx={{ fontWeight: 700, color: '#000', py: 2 }}>Contacto</TableCell>
+                    <TableCell sx={{ fontWeight: 700, color: '#000', py: 2 }}>Información</TableCell>
+                    <TableCell sx={{ fontWeight: 700, color: '#000', py: 2 }}>Fecha Registro</TableCell>
+                    <TableCell sx={{ fontWeight: 700, color: '#000', py: 2 }}>Estado</TableCell>
+                    <TableCell align="center" sx={{ fontWeight: 700, color: '#000', py: 2 }}>Acciones</TableCell>
                   </TableRow>
                 </TableHead>
                 <TableBody>
                   {proveedores.map((proveedor) => (
-                    <TableRow key={proveedor.id_proveedor} hover>
-                      <TableCell>
+                    <TableRow
+                      key={proveedor.id_proveedor}
+                      hover
+                      sx={{
+                        '&:hover': { bgcolor: 'rgba(0,0,0,0.02)' },
+                        '&:last-child td': { border: 0 }
+                      }}
+                    >
+                      <TableCell sx={{ py: 2 }}>
                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                          <Avatar sx={{ bgcolor: 'primary.main' }}>
+                          <Avatar 
+                            sx={{ 
+                              width: 40, 
+                              height: 40, 
+                              bgcolor: getAvatarColor(proveedor.nombre),
+                              fontSize: '0.875rem',
+                              fontWeight: 600
+                            }}
+                          >
                             {getInitials(proveedor.nombre)}
                           </Avatar>
                           <Box>
-                            <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
+                            <Typography variant="subtitle2" sx={{ fontWeight: 700, color: '#000', mb: 0.5 }}>
                               {proveedor.nombre}
                             </Typography>
                             {proveedor.direccion && (
                               <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                                <LocationIcon fontSize="small" sx={{ color: 'grey.500', fontSize: 16 }} />
-                                <Typography variant="caption" color="text.secondary">
-                                  {proveedor.direccion}
+                                <LocationIcon fontSize="small" sx={{ color: 'rgba(0,0,0,0.3)' }} />
+                                <Typography variant="caption" sx={{ color: 'rgba(0,0,0,0.5)' }}>
+                                  {proveedor.direccion.length > 50 
+                                    ? `${proveedor.direccion.substring(0, 50)}...`
+                                    : proveedor.direccion}
                                 </Typography>
                               </Box>
                             )}
                           </Box>
                         </Box>
                       </TableCell>
-                      <TableCell>
-                        {proveedor.contacto && (
-                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mb: 0.5 }}>
-                            <PersonIcon fontSize="small" sx={{ color: 'grey.500' }} />
-                            <Typography variant="body2">{proveedor.contacto}</Typography>
+                      <TableCell sx={{ py: 2 }}>
+                        {proveedor.contacto ? (
+                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mb: 1 }}>
+                            <PersonIcon fontSize="small" sx={{ color: 'rgba(0,0,0,0.3)' }} />
+                            <Typography variant="body2" sx={{ color: 'rgba(0,0,0,0.7)' }}>
+                              {proveedor.contacto}
+                            </Typography>
                           </Box>
+                        ) : (
+                          <Typography variant="caption" sx={{ color: 'rgba(0,0,0,0.3)' }}>
+                            Sin contacto
+                          </Typography>
                         )}
                         {proveedor.telefono && (
                           <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                            <PhoneIcon fontSize="small" sx={{ color: 'grey.500' }} />
-                            <Typography variant="body2">{proveedor.telefono}</Typography>
+                            <PhoneIcon fontSize="small" sx={{ color: 'rgba(0,0,0,0.3)' }} />
+                            <Typography variant="body2" sx={{ color: 'rgba(0,0,0,0.7)' }}>
+                              {proveedor.telefono}
+                            </Typography>
                           </Box>
                         )}
                       </TableCell>
-                      <TableCell>
+                      <TableCell sx={{ py: 2 }}>
                         {proveedor.email ? (
                           <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                            <EmailIcon fontSize="small" sx={{ color: 'grey.500' }} />
-                            <Typography variant="body2">{proveedor.email}</Typography>
+                            <EmailIcon fontSize="small" sx={{ color: 'rgba(0,0,0,0.3)' }} />
+                            <Typography variant="body2" sx={{ color: 'rgba(0,0,0,0.7)' }}>
+                              {proveedor.email}
+                            </Typography>
                           </Box>
                         ) : (
-                          <Typography variant="body2" color="text.secondary">
+                          <Typography variant="caption" sx={{ color: 'rgba(0,0,0,0.3)' }}>
                             Sin email
                           </Typography>
                         )}
                       </TableCell>
-                      <TableCell>
-                        <Typography variant="body2" color="text.secondary">
+                      <TableCell sx={{ py: 2 }}>
+                        <Typography variant="body2" sx={{ color: 'rgba(0,0,0,0.5)' }}>
                           {formatearFecha(proveedor.fecha_registro)}
                         </Typography>
                       </TableCell>
-                      <TableCell align="center">
+                      <TableCell sx={{ py: 2 }}>
                         <Chip
                           label={proveedor.activo ? 'Activo' : 'Inactivo'}
-                          color={proveedor.activo ? 'success' : 'default'}
                           size="small"
+                          sx={{
+                            bgcolor: proveedor.activo ? 'rgba(52,199,89,0.1)' : 'rgba(255,59,48,0.1)',
+                            color: proveedor.activo ? '#34c759' : '#ff3b30',
+                            border: 'none',
+                            fontWeight: 600,
+                            fontSize: '0.75rem'
+                          }}
                         />
                       </TableCell>
-                      <TableCell align="center">
-                        <Stack direction="row" spacing={1} justifyContent="center">
-                          <Tooltip title="Editar">
+                      <TableCell align="center" sx={{ py: 2 }}>
+                        <Stack direction="row" spacing={0.5} justifyContent="center">
+                          <Tooltip title="Editar proveedor">
                             <IconButton
                               size="small"
                               onClick={() => abrirFormularioEditar(proveedor)}
-                              sx={{ color: 'primary.main' }}
+                              sx={{ 
+                                color: 'rgba(0,0,0,0.5)',
+                                '&:hover': { 
+                                  color: '#007aff',
+                                  bgcolor: 'rgba(0,122,255,0.1)'
+                                }
+                              }}
                             >
                               <EditIcon fontSize="small" />
                             </IconButton>
@@ -662,24 +1032,94 @@ const [formData, setFormData] = useState({
             </TableContainer>
           )}
         </Card>
+
+        {/* Botones de navegación inferiores */}
+        <Grid container spacing={2} sx={{ mt: 4 }}>
+          <Grid item xs={12} sm={6} md={3}>
+            <Button
+              fullWidth
+              variant="outlined"
+              startIcon={<ArrowBackIcon />}
+              onClick={() => navigate('/Usuarios')}
+              sx={{
+                borderColor: 'rgba(0,0,0,0.1)',
+                color: '#000',
+                borderRadius: 2,
+                py: 1.5,
+                fontWeight: 600,
+                '&:hover': {
+                  borderColor: '#000',
+                  bgcolor: 'rgba(0,0,0,0.02)'
+                }
+              }}
+            >
+              Volver a Usuarios
+            </Button>
+          </Grid>
+          <Grid item xs={12} sm={6} md={3}>
+            <Button
+              fullWidth
+              variant="outlined"
+              startIcon={<StoreIcon />}
+              onClick={() => navigate('/shop')}
+              sx={{
+                borderColor: 'rgba(0,0,0,0.1)',
+                color: '#000',
+                borderRadius: 2,
+                py: 1.5,
+                fontWeight: 600,
+                '&:hover': {
+                  borderColor: '#000',
+                  bgcolor: 'rgba(0,0,0,0.02)'
+                }
+              }}
+            >
+              Ir a la Tienda
+            </Button>
+          </Grid>
+          <Grid item xs={12} sm={6} md={3}>
+            <Button
+              fullWidth
+              variant="outlined"
+              startIcon={<TrendingUpIcon />}
+              onClick={() => navigate('/reportes')}
+              sx={{
+                borderColor: 'rgba(0,0,0,0.1)',
+                color: '#000',
+                borderRadius: 2,
+                py: 1.5,
+                fontWeight: 600,
+                '&:hover': {
+                  borderColor: '#000',
+                  bgcolor: 'rgba(0,0,0,0.02)'
+                }
+              }}
+            >
+              Ver Reportes
+            </Button>
+          </Grid>
+        </Grid>
       </Container>
 
-      {/* Modal de formulario */}
+      {/* Formulario Modal moderno */}
       <Dialog
         open={mostrarFormulario}
         onClose={cerrarFormulario}
         maxWidth="md"
         fullWidth
-        PaperProps={{ sx: { borderRadius: 3 } }}
+        PaperProps={{
+          sx: { 
+            borderRadius: 3,
+            border: '1px solid rgba(0,0,0,0.06)',
+            bgcolor: '#fff'
+          }
+        }}
       >
-        <DialogTitle sx={{ pb: 1 }}>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-            <BusinessIcon />
-            <Typography variant="h5" sx={{ fontWeight: 600 }}>
-              {editandoProveedor ? 'Editar Proveedor' : 'Nuevo Proveedor'}
-            </Typography>
-          </Box>
-          <Typography variant="body2" color="text.secondary">
+        <DialogTitle sx={{ pb: 1, pt: 3 }}>
+          <Typography variant="h5" sx={{ fontWeight: 800, color: '#000' }}>
+            {editandoProveedor ? 'Editar Proveedor' : 'Nuevo Proveedor'}
+          </Typography>
+          <Typography variant="body2" sx={{ color: 'rgba(0,0,0,0.5)', mt: 0.5 }}>
             {editandoProveedor ? 'Modifica los datos del proveedor' : 'Completa la información del nuevo proveedor'}
           </Typography>
         </DialogTitle>
@@ -702,14 +1142,18 @@ const [formData, setFormData] = useState({
                   pattern: VALIDACIONES.nombre.pattern.source
                 }}
                 InputProps={{
-                  startAdornment: <BusinessIcon sx={{ mr: 1, color: 'grey.500' }} />,
                   endAdornment: getValidationIcon('nombre')
                 }}
                 sx={{
                   '& .MuiOutlinedInput-root': {
+                    borderRadius: 2,
                     '&.Mui-focused fieldset': {
                       borderColor: getBorderColor('nombre'),
+                      borderWidth: 2
                     },
+                  },
+                  '& .MuiInputLabel-root.Mui-focused': {
+                    color: getBorderColor('nombre')
                   }
                 }}
               />
@@ -730,103 +1174,102 @@ const [formData, setFormData] = useState({
                       pattern: VALIDACIONES.contacto.pattern.source
                     }}
                     InputProps={{
-                      startAdornment: <PersonIcon sx={{ mr: 1, color: 'grey.500' }} />,
                       endAdornment: getValidationIcon('contacto')
                     }}
                     sx={{
                       '& .MuiOutlinedInput-root': {
+                        borderRadius: 2,
                         '&.Mui-focused fieldset': {
                           borderColor: getBorderColor('contacto'),
+                          borderWidth: 2
                         },
                       }
                     }}
                   />
                 </Grid>
                 <Grid item xs={12} sm={6}>
-        <TextField
-  fullWidth
-  label="Teléfono"
-  variant="outlined"
-  value={formData.numeroTelefono || ''} // Solo el número sin lada
-  onChange={(e) => {
-    const valor = e.target.value;
-    // Permitir solo números, máximo 10 dígitos
-    const soloNumeros = valor.replace(/\D/g, '').slice(0, 10);
-    handleCampoChange('numeroTelefono', soloNumeros);
-    
-    // Actualizar el teléfono completo automáticamente
-    const ladaActual = formData.lada || '+52';
-    const telefonoCompleto = ladaActual + soloNumeros;
-    handleCampoChange('telefono', telefonoCompleto);
-  }}
-  placeholder="1234567890"
-  error={!!erroresValidacion.telefono}
-  helperText={erroresValidacion.telefono || (formData.numeroTelefono ? `${formData.numeroTelefono.length}/10 dígitos` : 'Escribe 10 dígitos')}
-  inputProps={{ 
-    maxLength: 10,
-    inputMode: 'numeric'
-  }}
-  InputProps={{
-    startAdornment: (
-      <InputAdornment position="start">
-        <PhoneIcon sx={{ color: 'grey.500', mr: 1 }} />
-        <TextField
-          select
-          variant="standard"
-          value={formData.lada || '+52'}
-          onChange={(e) => {
-            const nuevaLada = e.target.value;
-            handleCampoChange('lada', nuevaLada);
-            
-            // Actualizar el teléfono completo con la nueva lada
-            const numeroActual = formData.numeroTelefono || '';
-            const telefonoCompleto = nuevaLada + numeroActual;
-            handleCampoChange('telefono', telefonoCompleto);
-          }}
-          sx={{
-            minWidth: 100,
-            '& .MuiInput-underline:before': { borderBottom: 'none' },
-            '& .MuiInput-underline:after': { borderBottom: 'none' },
-            '& .MuiSelect-select': { 
-              paddingRight: '24px !important',
-              paddingLeft: '8px !important'
-            }
-          }}
-          SelectProps={{
-            native: true,
-          }}
-        >
-          <option value="+52">🇲🇽 +52</option>
-          <option value="+1">🇺🇸 +1</option>
-          <option value="+34">🇪🇸 +34</option>
-          <option value="+51">🇵🇪 +51</option>
-          <option value="+56">🇨🇱 +56</option>
-          <option value="+54">🇦🇷 +54</option>
-          <option value="+55">🇧🇷 +55</option>
-          <option value="+57">🇨🇴 +57</option>
-          <option value="+58">🇻🇪 +58</option>
-          <option value="+503">🇸🇻 +503</option>
-          <option value="+504">🇭🇳 +504</option>
-          <option value="+505">🇳🇮 +505</option>
-          <option value="+506">🇨🇷 +506</option>
-          <option value="+507">🇵🇦 +507</option>
-          <option value="+44">🇬🇧 +44</option>
-          <option value="+33">🇫🇷 +33</option>
-          <option value="+49">🇩🇪 +49</option>
-          <option value="+39">🇮🇹 +39</option>
-        </TextField>
-      </InputAdornment>
-    ),
-    endAdornment: getValidationIcon('telefono'),
-  }}
-  sx={{
-    '& .MuiOutlinedInput-root': {
-      '&.Mui-focused fieldset': {
-        borderColor: getBorderColor('telefono'),
-      },
-    }
-  }}
-/>
+                  <TextField
+                    fullWidth
+                    label="Teléfono"
+                    variant="outlined"
+                    value={formData.numeroTelefono || ''}
+                    onChange={(e) => {
+                      const valor = e.target.value;
+                      const soloNumeros = valor.replace(/\D/g, '').slice(0, 10);
+                      handleCampoChange('numeroTelefono', soloNumeros);
+                      
+                      const ladaActual = formData.lada || '+52';
+                      const telefonoCompleto = ladaActual + soloNumeros;
+                      handleCampoChange('telefono', telefonoCompleto);
+                    }}
+                    placeholder="1234567890"
+                    error={!!erroresValidacion.telefono}
+                    helperText={erroresValidacion.telefono || (formData.numeroTelefono ? `${formData.numeroTelefono.length}/10 dígitos` : 'Escribe 10 dígitos')}
+                    inputProps={{ 
+                      maxLength: 10,
+                      inputMode: 'numeric'
+                    }}
+                    InputProps={{
+                      startAdornment: (
+                        <InputAdornment position="start">
+                          <TextField
+                            select
+                            variant="standard"
+                            value={formData.lada || '+52'}
+                            onChange={(e) => {
+                              const nuevaLada = e.target.value;
+                              handleCampoChange('lada', nuevaLada);
+                              
+                              const numeroActual = formData.numeroTelefono || '';
+                              const telefonoCompleto = nuevaLada + numeroActual;
+                              handleCampoChange('telefono', telefonoCompleto);
+                            }}
+                            sx={{
+                              minWidth: 100,
+                              '& .MuiInput-underline:before': { borderBottom: 'none' },
+                              '& .MuiInput-underline:after': { borderBottom: 'none' },
+                              '& .MuiSelect-select': { 
+                                paddingRight: '24px !important',
+                                paddingLeft: '8px !important'
+                              }
+                            }}
+                            SelectProps={{
+                              native: true,
+                            }}
+                          >
+                            <option value="+52">🇲🇽 +52</option>
+                            <option value="+1">🇺🇸 +1</option>
+                            <option value="+34">🇪🇸 +34</option>
+                            <option value="+51">🇵🇪 +51</option>
+                            <option value="+56">🇨🇱 +56</option>
+                            <option value="+54">🇦🇷 +54</option>
+                            <option value="+55">🇧🇷 +55</option>
+                            <option value="+57">🇨🇴 +57</option>
+                            <option value="+58">🇻🇪 +58</option>
+                            <option value="+503">🇸🇻 +503</option>
+                            <option value="+504">🇭🇳 +504</option>
+                            <option value="+505">🇳🇮 +505</option>
+                            <option value="+506">🇨🇷 +506</option>
+                            <option value="+507">🇵🇦 +507</option>
+                            <option value="+44">🇬🇧 +44</option>
+                            <option value="+33">🇫🇷 +33</option>
+                            <option value="+49">🇩🇪 +49</option>
+                            <option value="+39">🇮🇹 +39</option>
+                          </TextField>
+                        </InputAdornment>
+                      ),
+                      endAdornment: getValidationIcon('telefono'),
+                    }}
+                    sx={{
+                      '& .MuiOutlinedInput-root': {
+                        borderRadius: 2,
+                        '&.Mui-focused fieldset': {
+                          borderColor: getBorderColor('telefono'),
+                          borderWidth: 2
+                        },
+                      }
+                    }}
+                  />
                 </Grid>
               </Grid>
 
@@ -845,13 +1288,14 @@ const [formData, setFormData] = useState({
                   pattern: VALIDACIONES.email.pattern.source
                 }}
                 InputProps={{
-                  startAdornment: <EmailIcon sx={{ mr: 1, color: 'grey.500' }} />,
                   endAdornment: getValidationIcon('email')
                 }}
                 sx={{
                   '& .MuiOutlinedInput-root': {
+                    borderRadius: 2,
                     '&.Mui-focused fieldset': {
                       borderColor: getBorderColor('email'),
+                      borderWidth: 2
                     },
                   }
                 }}
@@ -873,17 +1317,14 @@ const [formData, setFormData] = useState({
                   pattern: VALIDACIONES.direccion.pattern.source
                 }}
                 InputProps={{
-                  startAdornment: (
-                    <InputAdornment position="start" sx={{ alignSelf: 'flex-start', mt: 1.5 }}>
-                      <LocationIcon sx={{ color: 'grey.500' }} />
-                    </InputAdornment>
-                  ),
                   endAdornment: getValidationIcon('direccion')
                 }}
                 sx={{
                   '& .MuiOutlinedInput-root': {
+                    borderRadius: 2,
                     '&.Mui-focused fieldset': {
                       borderColor: getBorderColor('direccion'),
+                      borderWidth: 2
                     },
                   }
                 }}
@@ -894,23 +1335,76 @@ const [formData, setFormData] = useState({
           <DialogActions sx={{ p: 3, pt: 2 }}>
             <Button
               onClick={cerrarFormulario}
-              startIcon={<CloseIcon />}
-              sx={{ mr: 1 }}
+              sx={{ 
+                mr: 1,
+                color: 'rgba(0,0,0,0.5)',
+                fontWeight: 600,
+                '&:hover': {
+                  color: '#000',
+                  bgcolor: 'rgba(0,0,0,0.04)'
+                }
+              }}
             >
               Cancelar
             </Button>
             <Button
               type="submit"
               variant="contained"
-              startIcon={loading ? <CircularProgress size={16} /> : <SaveIcon />}
+              startIcon={loading ? <CircularProgress size={16} sx={{ color: '#fff' }} /> : <SaveIcon />}
               disabled={loading || Object.values(erroresValidacion).some(error => error !== '') || !formData.nombre.trim()}
-              sx={{ borderRadius: 2 }}
+              sx={{ 
+                borderRadius: 2,
+                bgcolor: '#000',
+                color: '#fff',
+                px: 3,
+                fontWeight: 600,
+                '&:hover': {
+                  bgcolor: '#1a1a1a',
+                  boxShadow: '0 8px 24px rgba(0,0,0,0.2)'
+                },
+                '&.Mui-disabled': {
+                  bgcolor: 'rgba(0,0,0,0.1)',
+                  color: 'rgba(0,0,0,0.3)'
+                }
+              }}
             >
               {editandoProveedor ? 'Actualizar' : 'Crear Proveedor'}
             </Button>
           </DialogActions>
         </form>
       </Dialog>
+
+      {/* FAB para móviles */}
+      <Fab
+        color="primary"
+        aria-label="add provider"
+        onClick={abrirFormularioNuevo}
+        sx={{
+          position: 'fixed',
+          bottom: 24,
+          right: 24,
+          display: { xs: 'flex', sm: 'none' },
+          bgcolor: '#000',
+          color: '#fff',
+          '&:hover': { bgcolor: '#1a1a1a' }
+        }}
+      >
+        <AddIcon />
+      </Fab>
+
+      {/* Footer minimalista */}
+      <Box sx={{ 
+        mt: 8, 
+        py: 3, 
+        borderTop: '1px solid rgba(0,0,0,0.06)',
+        bgcolor: '#fff'
+      }}>
+        <Container maxWidth="xl">
+          <Typography variant="caption" sx={{ color: 'rgba(0,0,0,0.4)', display: 'block', textAlign: 'center' }}>
+            GameStore Admin v1.0 • Sistema de gestión para tienda de videojuegos
+          </Typography>
+        </Container>
+      </Box>
     </Box>
   );
 };

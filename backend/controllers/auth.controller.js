@@ -94,7 +94,6 @@ function validateFormat(value, type, fieldName = 'Campo') {
     return { isValid: false, error: `${fieldName} es requerido` };
   }
   
-  // Convertir a string para validaciones de texto
   const stringValue = String(value).trim();
   
   if (stringValue === '') {
@@ -121,8 +120,12 @@ function validateFormat(value, type, fieldName = 'Campo') {
       break;
       
     case 'otp':
-      if (!FORMAT_VALIDATORS.otp.test(stringValue)) {
-        return { isValid: false, error: `${fieldName} debe ser un código de 6 dígitos` };
+      // ✅ ACEPTAR TANTO 4 COMO 6 DÍGITOS
+      if (!/^\d{4,6}$/.test(stringValue)) {
+        return { 
+          isValid: false, 
+          error: `${fieldName} debe ser un código de 4 o 6 dígitos` 
+        };
       }
       break;
       
@@ -611,8 +614,8 @@ async function sendEmail(to, subject, html) {
     sendSmtpEmail.subject = subject;
     sendSmtpEmail.htmlContent = html;
     sendSmtpEmail.sender = { 
-      name: "Productos", 
-      email: "r41474721@gmail.com"
+      name: "Prueba Correos", 
+      email: "mikestone127@gmail.com"
     };
     sendSmtpEmail.to = [{ email: to }];
 
@@ -1576,10 +1579,22 @@ exports.login = async (req, res) => {
 // ✅ VERIFICACIÓN OTP CORREGIDA - CON RETURNS APROPIADOS
 exports.verifyOtp = async (req, res) => {
   try {
-    // Validar cuerpo de la solicitud
+    // ❌ PROBLEMA: Solo valida OTP de 6 dígitos
     const requestValidations = {
       userId: { type: 'numericId', required: true },
-      otp: { type: 'otp', required: true }
+      otp: { 
+        required: true,
+        custom: (value) => {
+          // ✅ ACEPTAR TANTO 4 COMO 6 DÍGITOS
+          if (!/^\d{4,6}$/.test(value)) {
+            return {
+              isValid: false,
+              error: 'El código debe tener 4 o 6 dígitos'
+            };
+          }
+          return { isValid: true, error: null };
+        }
+      }
     };
 
     const validation = validateRequestBody(req.body, requestValidations);
@@ -1602,7 +1617,6 @@ exports.verifyOtp = async (req, res) => {
       [userId]
     );
     
-    // ✅ VALIDACIÓN: Usuario no encontrado
     if (result.rows.length === 0) {
       console.log('❌ Usuario no encontrado:', userId);
       return res.status(404).json({ 
@@ -1616,61 +1630,59 @@ exports.verifyOtp = async (req, res) => {
     let mode = 'online';
     const now = new Date();
     
-    console.log('🔍 Verificando OTP para usuario:', usuario.email);
-    console.log('🔢 OTP recibido:', otp);
+    console.log('🔍 Verificando código para usuario:', usuario.email);
+    console.log('🔢 Código recibido:', otp);
     console.log('🔢 OTP esperado (online):', usuario.otp);
     console.log('⏰ OTP expira:', usuario.otp_expires);
     
-    // ✅ Verificación de OTP online
+    // ✅ Verificación de OTP online (6 dígitos)
     if (usuario.otp && usuario.otp === otp && new Date(usuario.otp_expires) > now) {
       isValid = true;
       mode = 'online';
-      console.log('✅ OTP online válido');
+      console.log('✅ OTP online válido (6 dígitos)');
     } 
-    // ✅ Verificación de código offline
+    // ✅ Verificación de código offline (4 dígitos)
     else if (usuario.offline_code_hash && new Date(usuario.offline_code_expires) > now) {
-      console.log('🔍 Verificando código offline...');
+      console.log('🔍 Verificando código offline (4 dígitos)...');
       isValid = await bcrypt.compare(otp, usuario.offline_code_hash);
       if (isValid) {
         mode = 'offline';
-        console.log('✅ Código offline válido');
+        console.log('✅ Código offline válido (4 dígitos)');
       }
     }
     
-    // ✅ CRÍTICO: Si el OTP/código es inválido, RETORNAR INMEDIATAMENTE
+    // ✅ Si el código es inválido
     if (!isValid) {
       console.log('❌ Código incorrecto o expirado');
-      console.log('📊 Detalles de validación:', {
-        otpProporcionado: otp,
-        otpEsperado: usuario.otp,
-        otpExpiraEn: usuario.otp_expires,
-        tieneCodigoOffline: !!usuario.offline_code_hash,
-        codigoOfflineExpiraEn: usuario.offline_code_expires
-      });
+      
+      // Dar pista sobre el formato esperado
+      let hint = 'Código incorrecto';
+      if (usuario.otp_expires && new Date(usuario.otp_expires) < now) {
+        hint = 'El código online ha expirado (6 dígitos)';
+      } else if (usuario.offline_code_expires && new Date(usuario.offline_code_expires) < now) {
+        hint = 'El código offline ha expirado (4 dígitos)';
+      }
       
       // Registrar intento fallido
       await notificationMiddleware.onSuspiciousActivity(usuario.id, {
-        tipo: 'otp_invalido',
+        tipo: 'codigo_invalido',
         ip: req.ip,
         timestamp: new Date().toISOString(),
         modo: mode,
-        intentoOtp: otp.substring(0, 2) + '****' // Log parcial por seguridad
+        intentoCodigo: otp.substring(0, 2) + '****',
+        formatoEsperado: mode === 'online' ? '6 dígitos' : '4 dígitos'
       });
       
-      // ✅ RETURN AQUÍ para evitar continuar con el flujo
       return res.status(401).json({ 
         success: false,
         message: 'Código incorrecto o expirado.',
-        data: {
-          hint: usuario.otp_expires ? 
-            (new Date(usuario.otp_expires) < now ? 'El código ha expirado' : 'Código incorrecto') :
-            'No hay código activo'
-        }
+        hint: hint,
+        expectedFormat: mode === 'online' ? '6 dígitos' : '4 dígitos'
       });
     }
     
     // ✅ SOLO LLEGA AQUÍ SI EL CÓDIGO ES VÁLIDO
-    console.log('✅ Código verificado exitosamente');
+    console.log(`✅ Código ${mode} verificado exitosamente`);
     
     // Limpiar códigos usados
     await query(
@@ -1704,11 +1716,12 @@ exports.verifyOtp = async (req, res) => {
     await notificationMiddleware.onSuspiciousActivity(usuario.id, {
       tipo: 'verificacion_exitosa',
       timestamp: new Date().toISOString(),
-      modo: mode
+      modo: mode,
+      formatoCodigo: mode === 'online' ? '6 dígitos' : '4 dígitos'
     });
     
     const totalTime = Date.now() - startTime;
-    console.log(`✅ Verificación OTP ${mode} completada en: ${totalTime}ms`);
+    console.log(`✅ Verificación ${mode} completada en: ${totalTime}ms`);
     
     // ✅ RETURN de éxito
     return res.json({ 
@@ -1721,12 +1734,13 @@ exports.verifyOtp = async (req, res) => {
         rol: usuario.rol 
       },
       mode,
+      codeFormat: mode === 'online' ? '6 dígitos' : '4 dígitos',
       responseTime: totalTime,
       message: mode === 'offline' ? 'Autenticación offline exitosa' : 'Autenticación exitosa'
     });
     
   } catch (err) {
-    console.error('❌ Error verificando OTP:', err);
+    console.error('❌ Error verificando código:', err);
     return res.status(500).json({ 
       success: false,
       message: 'Error verificando código. Intenta nuevamente.' 
@@ -1760,43 +1774,6 @@ function invalidateAllUserSessions(userId) {
   console.log(`✅ Sesiones invalidadas para usuario ${userId}: ${removed ? 'SÍ' : 'NO'}`);
   return removed;
 }
-
-// ✅ FUNCIÓN PARA VERIFICAR Y LIMPIAR ACCESO NO AUTORIZADO
-exports.cleanUnauthorizedAccess = async (req, res) => {
-  try {
-    const { userId, email } = req.body;
-    
-    console.log('🚨 SOLICITUD DE LIMPIEZA DE ACCESO NO AUTORIZADO');
-    console.log(`👤 Usuario afectado: ${email || userId}`);
-    
-    if (userId) {
-      invalidateAllUserSessions(userId);
-    } else if (email) {
-      const usuario = await Usuario.obtenerPorEmail(email);
-      if (usuario) {
-        invalidateAllUserSessions(usuario.id);
-      }
-    }
-    
-    res.json({
-      success: true,
-      message: 'Sesiones invalidadas correctamente',
-      data: {
-        userId,
-        email,
-        sessionsInvalidated: true,
-        timestamp: new Date().toISOString()
-      }
-    });
-    
-  } catch (error) {
-    console.error('❌ Error limpiando acceso no autorizado:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Error limpiando sesiones'
-    });
-  }
-};
 
 // ✅ ENDPOINT PARA VALIDAR CONTRASEÑA SIN CAMBIARLA
 exports.validatePassword = async (req, res) => {

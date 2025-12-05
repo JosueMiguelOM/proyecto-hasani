@@ -38,7 +38,9 @@ import {
   Badge,
   FormControl,
   InputLabel,
-  Select
+  Select,
+  alpha,
+  InputAdornment
 } from '@mui/material';
 import {
   Download as DownloadIcon,
@@ -61,7 +63,21 @@ import {
   Add as AddIcon,
   Edit as EditIcon,
   Delete as DeleteIcon,
-  RestoreFromTrash as RestoreIcon
+  RestoreFromTrash as RestoreIcon,
+  Games as GamesIcon,
+  Analytics as AnalyticsIcon,
+  Speed as SpeedIcon,
+  Dashboard as DashboardIcon,
+  InsertChart as InsertChartIcon,
+  Equalizer as EqualizerIcon,
+  TrendingFlat as TrendingFlatIcon,
+  MoreVert as MoreVertIcon,
+  Search as SearchIcon,
+  CalendarToday as CalendarIcon,
+  ArrowUpward as ArrowUpIcon,
+  ArrowDownward as ArrowDownIcon,
+  Settings as SettingsIcon,
+  Info as InfoIcon
 } from '@mui/icons-material';
 import {
   BarChart,
@@ -70,8 +86,6 @@ import {
   Pie,
   LineChart,
   Line,
-  AreaChart,
-  Area,
   XAxis,
   YAxis,
   CartesianGrid,
@@ -89,13 +103,13 @@ import axios from 'axios';
 
 const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
 
-// Paleta de colores profesional
+// Paleta de colores moderna en blanco y negro
 const COLORS = [
-  '#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884D8',
-  '#82CA9D', '#FFC658', '#FF6B9D', '#C39BD3', '#76D7C4'
+  '#000000', '#333333', '#666666', '#999999', '#cccccc',
+  '#4a4a4a', '#767676', '#a3a3a3', '#d0d0d0', '#f5f5f5'
 ];
 
-// Configuración de límites de caracteres
+// Configuración de límites de caracteres (sin cambios)
 const LIMITES_CARACTERES = {
   codigo: 20,
   nombre: 100,
@@ -104,7 +118,7 @@ const LIMITES_CARACTERES = {
   unidad: 20
 };
 
-// Configuración de límites numéricos
+// Configuración de límites numéricos (sin cambios)
 const LIMITES_NUMERICOS = {
   stock_min: 0,
   stock_max: 1000000,
@@ -120,23 +134,24 @@ const Reportes = () => {
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(null);
 
-  // Estados para reportes
+  // Estados para reportes (sin cambios)
   const [reporteCategorias, setReporteCategorias] = useState([]);
   const [reporteMovimientos, setReporteMovimientos] = useState([]);
   const [reporteTopProductos, setReporteTopProductos] = useState([]);
   const [alertasStock, setAlertasStock] = useState([]);
   const [inventarioCompleto, setInventarioCompleto] = useState([]);
  
-  // Estados para filtros
+  // Estados para filtros (sin cambios)
   const [filtroStock, setFiltroStock] = useState('todos');
   const [filtroActivo, setFiltroActivo] = useState('todos');
+  const [busqueda, setBusqueda] = useState('');
 
-  // Estados para modal de productos por categoría
+  // Estados para modal de productos por categoría (sin cambios)
   const [modalCategoria, setModalCategoria] = useState(false);
   const [categoriaSeleccionada, setCategoriaSeleccionada] = useState(null);
   const [productosPorCategoria, setProductosPorCategoria] = useState([]);
 
-  // Estados para modal de crear/editar producto
+  // Estados para modal de crear/editar producto (sin cambios)
   const [modalProducto, setModalProducto] = useState(false);
   const [modoEdicion, setModoEdicion] = useState(false);
   const [productoSeleccionado, setProductoSeleccionado] = useState(null);
@@ -152,7 +167,7 @@ const Reportes = () => {
   });
   const [erroresForm, setErroresForm] = useState({});
 
-  // Estados para filtros de reportes
+  // Estados para filtros de reportes (sin cambios)
   const [fechaInicio, setFechaInicio] = useState(
     new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
   );
@@ -169,24 +184,19 @@ const Reportes = () => {
   const cargarInventarioCompleto = async () => {
     try {
       const token = localStorage.getItem('token');
-      // CAMBIO: Usar la ruta /pagos/productos que sí funciona correctamente
       const response = await axios.get(`${API_URL}/pagos/productos`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       if (response.data.success) {
-        console.log('📦 Inventario cargado desde /pagos/productos:', response.data.data);
         setInventarioCompleto(response.data.data);
       }
     } catch (err) {
-      console.error('Error cargando inventario:', err);
-      // Fallback: intentar con la ruta original
       try {
         const token = localStorage.getItem('token');
         const response = await axios.get(`${API_URL}/inventario`, {
           headers: { Authorization: `Bearer ${token}` }
         });
         if (response.data.success) {
-          console.log('📦 Inventario cargado desde /inventario:', response.data.data);
           setInventarioCompleto(response.data.data);
         }
       } catch (fallbackErr) {
@@ -206,7 +216,6 @@ const Reportes = () => {
         setReporteCategorias(response.data.data);
       }
     } catch (err) {
-      console.error('Error cargando reporte de categorías:', err);
       setError('Error al cargar el reporte de categorías');
     } finally {
       setLoading(false);
@@ -227,7 +236,6 @@ const Reportes = () => {
         setTimeout(() => setSuccess(null), 3000);
       }
     } catch (err) {
-      console.error('Error cargando reporte de movimientos:', err);
       setError('Error al cargar el reporte de movimientos');
     } finally {
       setLoading(false);
@@ -248,7 +256,6 @@ const Reportes = () => {
         setTimeout(() => setSuccess(null), 3000);
       }
     } catch (err) {
-      console.error('Error cargando top productos:', err);
       setError('Error al cargar el reporte de productos');
     } finally {
       setLoading(false);
@@ -276,7 +283,7 @@ const Reportes = () => {
     setModalCategoria(true);
   };
 
-  // Funciones para gestión de productos
+  // Funciones para gestión de productos (sin cambios)
   const abrirModalCrear = () => {
     setModoEdicion(false);
     setProductoSeleccionado(null);
@@ -295,7 +302,6 @@ const Reportes = () => {
   };
 
   const abrirModalEditar = (producto) => {
-    console.log('🔧 Editando producto:', producto);
     setModoEdicion(true);
     setProductoSeleccionado(producto);
     setFormProducto({
@@ -312,11 +318,9 @@ const Reportes = () => {
     setModalProducto(true);
   };
 
-  // Función de validación
   const validarFormulario = () => {
     const nuevosErrores = {};
 
-    // Validar longitud de campos de texto
     if (formProducto.codigo.length > LIMITES_CARACTERES.codigo) {
       nuevosErrores.codigo = `Máximo ${LIMITES_CARACTERES.codigo} caracteres`;
     }
@@ -333,7 +337,6 @@ const Reportes = () => {
       nuevosErrores.categoria = `Máximo ${LIMITES_CARACTERES.categoria} caracteres`;
     }
 
-    // Validar campos requeridos
     if (!formProducto.codigo.trim()) {
       nuevosErrores.codigo = 'El código es requerido';
     }
@@ -346,7 +349,6 @@ const Reportes = () => {
       nuevosErrores.categoria = 'La categoría es requerida';
     }
 
-    // Validar stock
     const stock = parseFloat(formProducto.stock);
     if (isNaN(stock) || stock < LIMITES_NUMERICOS.stock_min) {
       nuevosErrores.stock = `El stock no puede ser menor a ${LIMITES_NUMERICOS.stock_min}`;
@@ -354,7 +356,6 @@ const Reportes = () => {
       nuevosErrores.stock = `El stock no puede ser mayor a ${LIMITES_NUMERICOS.stock_max.toLocaleString()}`;
     }
 
-    // Validar stock mínimo
     const stockMinimo = parseFloat(formProducto.stock_minimo);
     if (isNaN(stockMinimo) || stockMinimo < LIMITES_NUMERICOS.stock_minimo_min) {
       nuevosErrores.stock_minimo = `El stock mínimo no puede ser menor a ${LIMITES_NUMERICOS.stock_minimo_min}`;
@@ -362,7 +363,6 @@ const Reportes = () => {
       nuevosErrores.stock_minimo = `El stock mínimo no puede ser mayor a ${LIMITES_NUMERICOS.stock_minimo_max.toLocaleString()}`;
     }
 
-    // Validar precio
     const precio = parseFloat(formProducto.precio);
     if (isNaN(precio) || precio < LIMITES_NUMERICOS.precio_min) {
       nuevosErrores.precio = `El precio no puede ser menor a ${LIMITES_NUMERICOS.precio_min}`;
@@ -370,7 +370,6 @@ const Reportes = () => {
       nuevosErrores.precio = `El precio no puede ser mayor a ${formatearMoneda(LIMITES_NUMERICOS.precio_max)}`;
     }
 
-    // Validar lógica de negocio: stock mínimo no puede ser mayor que stock
     if (stockMinimo > stock) {
       nuevosErrores.stock_minimo = 'El stock mínimo no puede ser mayor que el stock actual';
     }
@@ -382,7 +381,6 @@ const Reportes = () => {
   const handleInputChange = (e) => {
     const { name, value } = e.target;
    
-    // Para campos de texto, aplicar límites de caracteres
     if (['codigo', 'nombre', 'descripcion', 'categoria', 'unidad'].includes(name)) {
       const limite = LIMITES_CARACTERES[name];
       if (value.length <= limite) {
@@ -391,7 +389,6 @@ const Reportes = () => {
           [name]: value
         }));
        
-        // Limpiar error si existe
         if (erroresForm[name]) {
           setErroresForm(prev => ({
             ...prev,
@@ -399,22 +396,18 @@ const Reportes = () => {
           }));
         }
       } else {
-        // Si excede el límite, mostrar error pero no actualizar el valor
         setErroresForm(prev => ({
           ...prev,
           [name]: `Máximo ${limite} caracteres`
         }));
       }
     } else {
-      // Para campos numéricos
       let valorNumerico = parseFloat(value);
      
-      // Validar que sea un número válido
       if (isNaN(valorNumerico)) {
         valorNumerico = 0;
       }
 
-      // Aplicar límites específicos según el campo
       let valorFinal = valorNumerico;
       let errorCampo = '';
 
@@ -458,7 +451,6 @@ const Reportes = () => {
         [name]: valorFinal
       }));
 
-      // Actualizar errores
       if (errorCampo) {
         setErroresForm(prev => ({
           ...prev,
@@ -471,7 +463,6 @@ const Reportes = () => {
         }));
       }
 
-      // Validación cruzada: stock mínimo vs stock
       if (name === 'stock' || name === 'stock_minimo') {
         const stockActual = name === 'stock' ? valorFinal : parseFloat(formProducto.stock);
         const stockMinimoActual = name === 'stock_minimo' ? valorFinal : parseFloat(formProducto.stock_minimo);
@@ -502,8 +493,6 @@ const Reportes = () => {
       setLoading(true);
       const token = localStorage.getItem('token');
      
-      console.log('➕ Creando producto:', formProducto);
-     
       const response = await axios.post(
         `${API_URL}/inventario/products`,
         formProducto,
@@ -518,7 +507,6 @@ const Reportes = () => {
         await cargarReporteCategorias();
       }
     } catch (err) {
-      console.error('❌ Error creando producto:', err);
       setError(err.response?.data?.message || 'Error al crear el producto');
       setTimeout(() => setError(null), 5000);
     } finally {
@@ -537,8 +525,6 @@ const Reportes = () => {
       setLoading(true);
       const token = localStorage.getItem('token');
      
-      console.log('✏️ Actualizando producto:', productoSeleccionado.id, formProducto);
-     
       const response = await axios.put(
         `${API_URL}/inventario/products/${productoSeleccionado.id}`,
         formProducto,
@@ -553,7 +539,6 @@ const Reportes = () => {
         await cargarReporteCategorias();
       }
     } catch (err) {
-      console.error('❌ Error actualizando producto:', err);
       setError(err.response?.data?.message || 'Error al actualizar el producto');
       setTimeout(() => setError(null), 5000);
     } finally {
@@ -567,10 +552,7 @@ const Reportes = () => {
       const token = localStorage.getItem('token');
       const nuevoEstado = !esActivo(producto.activo);
      
-      console.log(`🔄 Cambiando estado de ${producto.nombre} a:`, nuevoEstado ? 'ACTIVO' : 'INACTIVO');
-     
       if (!nuevoEstado) {
-        // Eliminar (desactivar)
         const response = await axios.delete(
           `${API_URL}/inventario/products/${producto.id}`,
           { headers: { Authorization: `Bearer ${token}` } }
@@ -580,7 +562,6 @@ const Reportes = () => {
           setSuccess(`Producto "${producto.nombre}" desactivado exitosamente`);
         }
       } else {
-        // Reactivar producto (actualizar campo activo a true)
         const response = await axios.put(
           `${API_URL}/inventario/products/${producto.id}`,
           { activo: true },
@@ -596,7 +577,6 @@ const Reportes = () => {
       await cargarInventarioCompleto();
       await cargarReporteCategorias();
     } catch (err) {
-      console.error('❌ Error cambiando estado del producto:', err);
       setError(err.response?.data?.message || 'Error al cambiar el estado del producto');
       setTimeout(() => setError(null), 5000);
     } finally {
@@ -648,7 +628,6 @@ const Reportes = () => {
       setSuccess(`Reporte ${tipo} descargado exitosamente`);
       setTimeout(() => setSuccess(null), 3000);
     } catch (err) {
-      console.error('Error descargando reporte Excel:', err);
       setError('Error al descargar el reporte en Excel');
     } finally {
       setLoading(false);
@@ -670,46 +649,35 @@ const Reportes = () => {
     });
   };
 
-  // Función helper para verificar si un valor es "verdadero" en cualquier formato
   const esActivo = (valor) => {
     return valor === true || valor === 't' || valor === 'true' || valor === 'TRUE';
   };
 
-  // Función helper para verificar si un valor es "falso" en cualquier formato
   const esInactivo = (valor) => {
     return valor === false || valor === 'f' || valor === 'false' || valor === 'FALSE';
   };
 
-  // Filtrar inventario completo según los filtros seleccionados
   const inventarioFiltrado = inventarioCompleto.filter(producto => {
-    console.log('Producto:', producto.codigo, 'Activo:', producto.activo, 'Stock:', producto.stock, 'Min:', producto.stock_minimo);
-   
-    // Filtro por stock
     let cumpleFiltroStock = true;
     if (filtroStock === 'bajo') {
       cumpleFiltroStock = Number(producto.stock) <= Number(producto.stock_minimo);
-      console.log('Filtro bajo:', cumpleFiltroStock, producto.codigo);
     } else if (filtroStock === 'normal') {
       cumpleFiltroStock = Number(producto.stock) > Number(producto.stock_minimo);
-      console.log('Filtro normal:', cumpleFiltroStock, producto.codigo);
     }
 
-    // Filtro por estado activo - manejar múltiples formatos
     let cumpleFiltroActivo = true;
     if (filtroActivo === 'activos') {
       cumpleFiltroActivo = esActivo(producto.activo);
-      console.log('Filtro activos:', cumpleFiltroActivo, producto.codigo, producto.activo);
     } else if (filtroActivo === 'inactivos') {
       cumpleFiltroActivo = esInactivo(producto.activo);
-      console.log('Filtro inactivos:', cumpleFiltroActivo, producto.codigo, producto.activo);
     }
 
-    const resultado = cumpleFiltroStock && cumpleFiltroActivo;
-    if (resultado) {
-      console.log('✅ Producto pasa filtro:', producto.codigo);
-    }
-   
-    return resultado;
+    const cumpleBusqueda = busqueda === '' || 
+      producto.nombre.toLowerCase().includes(busqueda.toLowerCase()) ||
+      producto.codigo.toLowerCase().includes(busqueda.toLowerCase()) ||
+      producto.categoria.toLowerCase().includes(busqueda.toLowerCase());
+
+    return cumpleFiltroStock && cumpleFiltroActivo && cumpleBusqueda;
   });
 
   // Preparar datos para gráficas
@@ -749,7 +717,6 @@ const Reportes = () => {
     movimientos: parseInt(prod.total_movimientos)
   }));
 
-  // Datos para gráfica de radar de categorías
   const datosRadarCategorias = reporteCategorias.slice(0, 6).map(cat => ({
     categoria: cat.categoria,
     valor: parseFloat(cat.valor_total) / 1000,
@@ -757,964 +724,774 @@ const Reportes = () => {
     productos: parseInt(cat.cantidad_productos) * 10
   }));
 
+  // Función para obtener gradiente de grises
+  const getGrayGradient = (index) => {
+    const intensities = [10, 30, 50, 70, 90, 110, 130, 150, 170, 190];
+    return `linear-gradient(135deg, #${intensities[index]}${intensities[index]}${intensities[index]} 0%, #${Math.min(255, intensities[index] + 30)}${Math.min(255, intensities[index] + 30)}${Math.min(255, intensities[index] + 30)} 100%)`;
+  };
+
   return (
-    <Box sx={{ minHeight: '100vh', bgcolor: 'grey.50' }}>
-      <AppBar position="static" sx={{ background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' }} elevation={2}>
-        <Toolbar>
-          <IconButton color="inherit" onClick={() => window.history.back()} sx={{ mr: 2 }}>
-            <ArrowBackIcon />
-          </IconButton>
-          <AssessmentIcon sx={{ mr: 2 }} />
-          <Typography variant="h6" sx={{ flexGrow: 1 }}>
-            Sistema de Reportes y Analytics
-          </Typography>
-          <Tooltip title="Actualizar datos">
-            <IconButton color="inherit" onClick={() => {
-              cargarReporteCategorias();
-              cargarAlertasStock();
-              cargarInventarioCompleto();
-            }}>
-              <RefreshIcon />
-            </IconButton>
-          </Tooltip>
-        </Toolbar>
+    <Box sx={{ 
+      minHeight: '100vh', 
+      bgcolor: '#f0f2f5',
+      fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif'
+    }}>
+      {/* Header Rediseñado - Posición diferente */}
+      <AppBar 
+        position="static" 
+        elevation={0}
+        sx={{ 
+          bgcolor: '#fff',
+          borderBottom: '1px solid rgba(0,0,0,0.08)',
+          mb: 4
+        }}
+      >
+        <Container maxWidth="xl">
+          <Toolbar sx={{ minHeight: 72, px: 0 }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 3, flexGrow: 1 }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                <GamesIcon sx={{ color: '#000', fontSize: 32 }} />
+                <Box>
+                  <Typography 
+                    variant="h5" 
+                    sx={{ 
+                      fontWeight: 900, 
+                      color: '#000',
+                      letterSpacing: '-0.5px',
+                      lineHeight: 1
+                    }}
+                  >
+                    INVENTORY PRO
+                  </Typography>
+                  <Typography variant="caption" sx={{ color: 'rgba(0,0,0,0.5)', fontWeight: 500 }}>
+                    Advanced Analytics Dashboard
+                  </Typography>
+                </Box>
+              </Box>
+              
+              <Box sx={{ display: { xs: 'none', md: 'flex' }, gap: 1 }}>
+                <Chip 
+                  icon={<AssessmentIcon />}
+                  label="Business Intelligence" 
+                  size="small" 
+                  sx={{ 
+                    height: 28,
+                    fontWeight: 600,
+                    bgcolor: 'rgba(0,0,0,0.06)',
+                    color: '#000',
+                    '& .MuiChip-icon': { fontSize: 16 }
+                  }}
+                />
+                <Chip 
+                  icon={<TrendingUpIcon />}
+                  label="Real-time Data" 
+                  size="small" 
+                  sx={{ 
+                    height: 28,
+                    fontWeight: 600,
+                    bgcolor: 'rgba(0,0,0,0.06)',
+                    color: '#000',
+                    '& .MuiChip-icon': { fontSize: 16 }
+                  }}
+                />
+              </Box>
+            </Box>
+            
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+              <Tooltip title="Dashboard">
+                <IconButton onClick={() => window.location.href = '/Usuarios'} sx={{ color: '#000' }}>
+                  <DashboardIcon />
+                </IconButton>
+              </Tooltip>
+              <Tooltip title="Refresh Data">
+                <IconButton 
+                  onClick={() => {
+                    cargarReporteCategorias();
+                    cargarAlertasStock();
+                    cargarInventarioCompleto();
+                  }}
+                  sx={{ color: '#000' }}
+                >
+                  <RefreshIcon />
+                </IconButton>
+              </Tooltip>
+            </Box>
+          </Toolbar>
+        </Container>
       </AppBar>
 
-      <Container maxWidth="xl" sx={{ py: 4 }}>
-        {error && (
-          <Alert severity="error" onClose={() => setError(null)} sx={{ mb: 3 }}>
-            {error}
-          </Alert>
-        )}
+      <Container maxWidth="xl" sx={{ pb: 6 }}>
+        {/* Mensajes reorganizados - Ahora en la parte superior derecha */}
+        <Box sx={{ position: 'fixed', top: 100, right: 24, zIndex: 1000, width: 350 }}>
+          {error && (
+            <Alert 
+              severity="error" 
+              onClose={() => setError(null)} 
+              sx={{ 
+                mb: 2,
+                borderRadius: 2,
+                boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
+                '& .MuiAlert-icon': { color: '#ff3b30' }
+              }}
+            >
+              {error}
+            </Alert>
+          )}
 
-        {success && (
-          <Alert severity="success" onClose={() => setSuccess(null)} sx={{ mb: 3 }}>
-            {success}
-          </Alert>
-        )}
+          {success && (
+            <Alert 
+              severity="success" 
+              onClose={() => setSuccess(null)} 
+              sx={{ 
+                mb: 2,
+                borderRadius: 2,
+                boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
+                '& .MuiAlert-icon': { color: '#34c759' }
+              }}
+            >
+              {success}
+            </Alert>
+          )}
+        </Box>
 
-        {/* Alertas de Stock */}
-        {alertasStock.length > 0 && (
-          <Card sx={{ mb: 3, bgcolor: 'warning.light', borderLeft: 4, borderColor: 'warning.main' }}>
-            <CardContent>
-              <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-                <WarningIcon sx={{ mr: 1, color: 'warning.dark' }} />
-                <Typography variant="h6" color="warning.dark">
-                  Alertas de Stock Bajo ({alertasStock.length})
-                </Typography>
-              </Box>
-              <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
-                {alertasStock.slice(0, 5).map((alerta) => (
-                  <Chip
-                    key={alerta.id}
-                    label={`${alerta.nombre_producto}: ${alerta.stock_actual}/${alerta.stock_minimo}`}
-                    color={alerta.tipo_alerta === 'critico' ? 'error' : 'warning'}
-                    size="small"
-                    sx={{ mb: 1 }}
-                  />
-                ))}
-                {alertasStock.length > 5 && (
-                  <Chip label={`+${alertasStock.length - 5} más`} size="small" sx={{ mb: 1 }} />
-                )}
-              </Stack>
-            </CardContent>
-          </Card>
-        )}
-
-        {/* Estadísticas Rápidas */}
-        <Grid container spacing={3} sx={{ mb: 3 }}>
-          <Grid item xs={12} sm={6} md={3}>
-            <Card sx={{ bgcolor: 'primary.main', color: 'white' }}>
-              <CardContent>
-                <Typography variant="h4" sx={{ fontWeight: 700 }}>
+        {/* Tarjetas de estadísticas en diseño horizontal compacto */}
+        <Grid container spacing={2} sx={{ mb: 4 }}>
+          <Grid item xs={12} md={2}>
+            <Card sx={{ borderRadius: 2, height: '100%' }}>
+              <CardContent sx={{ p: 2.5, textAlign: 'center' }}>
+                <CategoryIcon sx={{ color: '#000', fontSize: 28, mb: 1 }} />
+                <Typography variant="h4" sx={{ fontWeight: 800, color: '#000', mb: 0.5 }}>
                   {reporteCategorias.length}
                 </Typography>
-                <Typography variant="body2">Categorías Activas</Typography>
+                <Typography variant="caption" sx={{ color: 'rgba(0,0,0,0.6)', fontWeight: 600 }}>
+                  CATEGORÍAS
+                </Typography>
               </CardContent>
             </Card>
           </Grid>
-          <Grid item xs={12} sm={6} md={3}>
-            <Card sx={{ bgcolor: 'success.main', color: 'white' }}>
-              <CardContent>
-                <Typography variant="h4" sx={{ fontWeight: 700 }}>
+          
+          <Grid item xs={12} md={2}>
+            <Card sx={{ borderRadius: 2, height: '100%' }}>
+              <CardContent sx={{ p: 2.5, textAlign: 'center' }}>
+                <InventoryIcon sx={{ color: '#000', fontSize: 28, mb: 1 }} />
+                <Typography variant="h4" sx={{ fontWeight: 800, color: '#000', mb: 0.5 }}>
                   {reporteCategorias.reduce((sum, cat) => sum + parseInt(cat.cantidad_productos), 0)}
                 </Typography>
-                <Typography variant="body2">Total Productos</Typography>
-              </CardContent>
-            </Card>
-          </Grid>
-          <Grid item xs={12} sm={6} md={3}>
-            <Card sx={{ bgcolor: 'info.main', color: 'white' }}>
-              <CardContent>
-                <Typography variant="h4" sx={{ fontWeight: 700 }}>
-                  {reporteCategorias.reduce((sum, cat) => sum + parseInt(cat.total_stock), 0)}
+                <Typography variant="caption" sx={{ color: 'rgba(0,0,0,0.6)', fontWeight: 600 }}>
+                  PRODUCTOS
                 </Typography>
-                <Typography variant="body2">Unidades en Stock</Typography>
               </CardContent>
             </Card>
           </Grid>
-          <Grid item xs={12} sm={6} md={3}>
-            <Card sx={{ bgcolor: 'secondary.main', color: 'white' }}>
-              <CardContent>
-                <Typography variant="h4" sx={{ fontWeight: 700 }}>
+          
+          <Grid item xs={12} md={2}>
+            <Card sx={{ borderRadius: 2, height: '100%' }}>
+              <CardContent sx={{ p: 2.5, textAlign: 'center' }}>
+                <EqualizerIcon sx={{ color: '#000', fontSize: 28, mb: 1 }} />
+                <Typography variant="h4" sx={{ fontWeight: 800, color: '#000', mb: 0.5 }}>
+                  {reporteCategorias.reduce((sum, cat) => sum + parseInt(cat.total_stock), 0).toLocaleString()}
+                </Typography>
+                <Typography variant="caption" sx={{ color: 'rgba(0,0,0,0.6)', fontWeight: 600 }}>
+                  STOCK TOTAL
+                </Typography>
+              </CardContent>
+            </Card>
+          </Grid>
+          
+          <Grid item xs={12} md={3}>
+            <Card sx={{ borderRadius: 2, height: '100%' }}>
+              <CardContent sx={{ p: 2.5, textAlign: 'center' }}>
+                <TrendingUpIcon sx={{ color: '#000', fontSize: 28, mb: 1 }} />
+                <Typography variant="h5" sx={{ fontWeight: 800, color: '#000', mb: 0.5 }}>
                   {formatearMoneda(reporteCategorias.reduce((sum, cat) => sum + parseFloat(cat.valor_total), 0))}
                 </Typography>
-                <Typography variant="body2">Valor Total</Typography>
+                <Typography variant="caption" sx={{ color: 'rgba(0,0,0,0.6)', fontWeight: 600 }}>
+                  VALOR TOTAL INVENTARIO
+                </Typography>
+              </CardContent>
+            </Card>
+          </Grid>
+          
+          <Grid item xs={12} md={3}>
+            <Card sx={{ borderRadius: 2, height: '100%', bgcolor: '#000', color: '#fff' }}>
+              <CardContent sx={{ p: 2.5, textAlign: 'center' }}>
+                <AnalyticsIcon sx={{ fontSize: 28, mb: 1 }} />
+                <Typography variant="h5" sx={{ fontWeight: 800, mb: 0.5 }}>
+                  {alertasStock.length} ALERTAS
+                </Typography>
+                <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.8)', fontWeight: 600 }}>
+                  STOCK BAJO CRÍTICO
+                </Typography>
               </CardContent>
             </Card>
           </Grid>
         </Grid>
 
-        {/* Botones de Descarga Rápida */}
-        <Card sx={{ mb: 3 }}>
-          <CardContent>
-            <Typography variant="h6" gutterBottom sx={{ display: 'flex', alignItems: 'center' }}>
-              <ExcelIcon sx={{ mr: 1 }} />
-              Descargas Rápidas en Excel
-            </Typography>
-            <Grid container spacing={2} sx={{ mt: 1 }}>
-              <Grid item xs={12} sm={6} md={3}>
-                <Button
-                  fullWidth
-                  variant="contained"
-                  color="success"
-                  startIcon={<DownloadIcon />}
-                  onClick={() => descargarReporteExcel('inventario')}
-                  disabled={loading}
-                >
-                  Inventario
-                </Button>
-              </Grid>
-              <Grid item xs={12} sm={6} md={3}>
-                <Button
-                  fullWidth
-                  variant="contained"
-                  color="info"
-                  startIcon={<DownloadIcon />}
-                  onClick={() => descargarReporteExcel('movimientos')}
-                  disabled={loading}
-                >
-                  Movimientos
-                </Button>
-              </Grid>
-              <Grid item xs={12} sm={6} md={3}>
-                <Button
-                  fullWidth
-                  variant="contained"
-                  color="warning"
-                  startIcon={<DownloadIcon />}
-                  onClick={() => descargarReporteExcel('productos-movidos')}
-                  disabled={loading}
-                >
-                  Top Productos
-                </Button>
-              </Grid>
-              <Grid item xs={12} sm={6} md={3}>
-                <Button
-                  fullWidth
-                  variant="contained"
-                  color="secondary"
-                  startIcon={<DownloadIcon />}
-                  onClick={() => descargarReporteExcel('completo')}
-                  disabled={loading}
-                >
-                  Reporte Completo
-                </Button>
-              </Grid>
-            </Grid>
-          </CardContent>
-        </Card>
-
-        {/* Tabs de Reportes */}
-        <Card>
-          <Tabs
-            value={tabActual}
-            onChange={(e, newValue) => setTabActual(newValue)}
-            variant="scrollable"
-            scrollButtons="auto"
-          >
-            <Tab icon={<CategoryIcon />} label="Por Categorías" />
-            <Tab icon={<TimelineIcon />} label="Movimientos" />
-            <Tab icon={<TrendingUpIcon />} label="Top Productos" />
-            <Tab icon={<InventoryIcon />} label="Inventario Completo" />
-            <Tab icon={<BarChartIcon />} label="Dashboard" />
-          </Tabs>
-
-          <Divider />
-
-          <CardContent>
-            {/* Tab 0: Reporte por Categorías */}
-            {tabActual === 0 && (
-              <Box>
-                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-                  <Typography variant="h6">Análisis por Categorías</Typography>
+        {/* Layout principal - Sidebar izquierdo con tabs y contenido a la derecha */}
+        <Grid container spacing={3}>
+          {/* Sidebar izquierdo */}
+          <Grid item xs={12} md={3}>
+            <Card sx={{ borderRadius: 3, mb: 3 }}>
+              <CardContent>
+                <Typography variant="h6" sx={{ fontWeight: 700, mb: 2 }}>
+                  Quick Actions
+                </Typography>
+                <Stack spacing={2}>
                   <Button
-                    variant="outlined"
-                    startIcon={<RefreshIcon />}
-                    onClick={cargarReporteCategorias}
-                    disabled={loading}
+                    fullWidth
+                    variant="contained"
+                    startIcon={<AddIcon />}
+                    onClick={abrirModalCrear}
+                    sx={{ justifyContent: 'flex-start' }}
                   >
-                    Actualizar
+                    Nuevo Producto
                   </Button>
-                </Box>
+                  <Button
+                    fullWidth
+                    variant="outlined"
+                    startIcon={<DownloadIcon />}
+                    onClick={() => descargarReporteExcel('completo')}
+                    sx={{ justifyContent: 'flex-start' }}
+                  >
+                    Exportar Todo
+                  </Button>
+                </Stack>
+              </CardContent>
+            </Card>
 
-                {loading ? (
-                  <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
-                    <CircularProgress />
-                  </Box>
-                ) : (
-                  <>
-                    {/* Gráficas de Categorías */}
-                    <Grid container spacing={3} sx={{ mb: 4 }}>
-                      <Grid item xs={12} lg={6}>
-                        <Card variant="outlined">
-                          <CardContent>
-                            <Typography variant="h6" gutterBottom sx={{ display: 'flex', alignItems: 'center' }}>
-                              <PieChartIcon sx={{ mr: 1 }} />
-                              Distribución por Valor
-                            </Typography>
-                            <ResponsiveContainer width="100%" height={300}>
-                              <PieChart>
-                                <Pie
-                                  data={datosGraficaCategorias}
-                                  dataKey="valor"
-                                  nameKey="name"
-                                  cx="50%"
-                                  cy="50%"
-                                  outerRadius={100}
-                                  label={(entry) => `${entry.name}: ${formatearMoneda(entry.valor)}`}
-                                >
-                                  {datosGraficaCategorias.map((entry, index) => (
-                                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                                  ))}
-                                </Pie>
-                                <RechartsTooltip formatter={(value) => formatearMoneda(value)} />
-                              </PieChart>
-                            </ResponsiveContainer>
-                          </CardContent>
-                        </Card>
-                      </Grid>
-
-                      <Grid item xs={12} lg={6}>
-                        <Card variant="outlined">
-                          <CardContent>
-                            <Typography variant="h6" gutterBottom sx={{ display: 'flex', alignItems: 'center' }}>
-                              <BarChartIcon sx={{ mr: 1 }} />
-                              Stock por Categoría
-                            </Typography>
-                            <ResponsiveContainer width="100%" height={300}>
-                              <BarChart data={datosGraficaCategorias}>
-                                <CartesianGrid strokeDasharray="3 3" />
-                                <XAxis dataKey="name" />
-                                <YAxis />
-                                <RechartsTooltip />
-                                <Legend />
-                                <Bar dataKey="stock" fill="#8884d8" name="Stock Total" />
-                                <Bar dataKey="productos" fill="#82ca9d" name="Cantidad Productos" />
-                              </BarChart>
-                            </ResponsiveContainer>
-                          </CardContent>
-                        </Card>
-                      </Grid>
-
-                      <Grid item xs={12}>
-                        <Card variant="outlined">
-                          <CardContent>
-                            <Typography variant="h6" gutterBottom sx={{ display: 'flex', alignItems: 'center' }}>
-                              <ShowChartIcon sx={{ mr: 1 }} />
-                              Análisis Multidimensional
-                            </Typography>
-                            <ResponsiveContainer width="100%" height={350}>
-                              <RadarChart data={datosRadarCategorias}>
-                                <PolarGrid />
-                                <PolarAngleAxis dataKey="categoria" />
-                                <PolarRadiusAxis />
-                                <Radar name="Valor (k)" dataKey="valor" stroke="#8884d8" fill="#8884d8" fillOpacity={0.6} />
-                                <Radar name="Stock" dataKey="stock" stroke="#82ca9d" fill="#82ca9d" fillOpacity={0.6} />
-                                <Radar name="Productos" dataKey="productos" stroke="#ffc658" fill="#ffc658" fillOpacity={0.6} />
-                                <Legend />
-                                <RechartsTooltip />
-                              </RadarChart>
-                            </ResponsiveContainer>
-                          </CardContent>
-                        </Card>
-                      </Grid>
-                    </Grid>
-
-                    {/* Tabla de Categorías */}
-                    <TableContainer component={Paper} variant="outlined">
-                      <Table>
-                        <TableHead>
-                          <TableRow sx={{ bgcolor: 'grey.100' }}>
-                            <TableCell sx={{ fontWeight: 600 }}>Categoría</TableCell>
-                            <TableCell align="center" sx={{ fontWeight: 600 }}>Productos</TableCell>
-                            <TableCell align="center" sx={{ fontWeight: 600 }}>Stock Total</TableCell>
-                            <TableCell align="center" sx={{ fontWeight: 600 }}>Promedio Stock</TableCell>
-                            <TableCell align="right" sx={{ fontWeight: 600 }}>Valor Total</TableCell>
-                            <TableCell align="center" sx={{ fontWeight: 600 }}>Acciones</TableCell>
-                          </TableRow>
-                        </TableHead>
-                        <TableBody>
-                          {reporteCategorias.map((cat, idx) => (
-                            <TableRow key={idx} hover>
-                              <TableCell>
-                                <Chip
-                                  label={cat.categoria}
-                                  sx={{ bgcolor: COLORS[idx % COLORS.length], color: 'white' }}
-                                />
-                              </TableCell>
-                              <TableCell align="center">
-                                <Chip label={cat.cantidad_productos} size="small" />
-                              </TableCell>
-                              <TableCell align="center">{cat.total_stock}</TableCell>
-                              <TableCell align="center">{cat.promedio_stock}</TableCell>
-                              <TableCell align="right" sx={{ fontWeight: 600, color: 'success.main' }}>
-                                {formatearMoneda(cat.valor_total)}
-                              </TableCell>
-                              <TableCell align="center">
-                                <Tooltip title="Ver productos">
-                                  <IconButton
-                                    size="small"
-                                    color="primary"
-                                    onClick={() => verProductosCategoria(cat.categoria)}
-                                  >
-                                    <VisibilityIcon />
-                                  </IconButton>
-                                </Tooltip>
-                              </TableCell>
-                            </TableRow>
-                          ))}
-                        </TableBody>
-                      </Table>
-                    </TableContainer>
-                  </>
-                )}
-              </Box>
-            )}
-
-            {/* Tab 1: Movimientos por Período */}
-            {tabActual === 1 && (
-              <Box>
-                <Typography variant="h6" gutterBottom>
-                  Movimientos por Período
+            <Card sx={{ borderRadius: 3 }}>
+              <CardContent>
+                <Typography variant="h6" sx={{ fontWeight: 700, mb: 2 }}>
+                  Export Reports
                 </Typography>
-
-                <Grid container spacing={2} sx={{ mb: 3 }}>
-                  <Grid item xs={12} sm={4}>
-                    <TextField
-                      fullWidth
-                      type="date"
-                      label="Fecha Inicio"
-                      value={fechaInicio}
-                      onChange={(e) => setFechaInicio(e.target.value)}
-                      InputLabelProps={{ shrink: true }}
-                    />
-                  </Grid>
-                  <Grid item xs={12} sm={4}>
-                    <TextField
-                      fullWidth
-                      type="date"
-                      label="Fecha Fin"
-                      value={fechaFin}
-                      onChange={(e) => setFechaFin(e.target.value)}
-                      InputLabelProps={{ shrink: true }}
-                    />
-                  </Grid>
-                  <Grid item xs={12} sm={4}>
+                <Stack spacing={1.5}>
+                  {[
+                    { tipo: 'inventario', label: 'Inventory Report', icon: <InventoryIcon /> },
+                    { tipo: 'movimientos', label: 'Movement Report', icon: <TimelineIcon /> },
+                    { tipo: 'productos-movidos', label: 'Top Products', icon: <TrendingUpIcon /> },
+                    { tipo: 'completo', label: 'Full System Report', icon: <AnalyticsIcon /> }
+                  ].map((item) => (
                     <Button
-                      fullWidth
-                      variant="contained"
-                      onClick={cargarReporteMovimientos}
-                      disabled={loading}
-                      sx={{ height: '56px' }}
+                      key={item.tipo}
+                      startIcon={item.icon}
+                      onClick={() => descargarReporteExcel(item.tipo)}
+                      sx={{ justifyContent: 'flex-start', textAlign: 'left' }}
                     >
-                      Generar Reporte
+                      {item.label}
                     </Button>
-                  </Grid>
-                </Grid>
+                  ))}
+                </Stack>
+              </CardContent>
+            </Card>
+          </Grid>
 
-                {loading ? (
-                  <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
-                    <CircularProgress />
-                  </Box>
-                ) : reporteMovimientos.length > 0 ? (
-                  <>
-                    <Card variant="outlined" sx={{ mb: 3 }}>
-                      <CardContent>
-                        <Typography variant="h6" gutterBottom>
-                          Tendencia de Movimientos
+          {/* Contenido principal */}
+          <Grid item xs={12} md={9}>
+            {/* Alertas de Stock - Nuevo diseño como banner horizontal */}
+            {alertasStock.length > 0 && (
+              <Card 
+                sx={{ 
+                  mb: 3, 
+                  borderRadius: 3,
+                  bgcolor: 'rgba(255,149,0,0.1)',
+                  border: '2px solid #ff9500'
+                }}
+              >
+                <CardContent sx={{ py: 2, px: 3 }}>
+                  <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                      <WarningIcon sx={{ color: '#ff9500', fontSize: 32 }} />
+                      <Box>
+                        <Typography variant="h6" sx={{ fontWeight: 700 }}>
+                          {alertasStock.length} Productos con Stock Bajo
                         </Typography>
-                        <ResponsiveContainer width="100%" height={300}>
-                          <LineChart data={datosGraficaMovimientos}>
-                            <CartesianGrid strokeDasharray="3 3" />
-                            <XAxis dataKey="fecha" />
-                            <YAxis />
-                            <RechartsTooltip />
-                            <Legend />
-                            <Line type="monotone" dataKey="entradas" stroke="#82ca9d" name="Entradas" strokeWidth={2} />
-                            <Line type="monotone" dataKey="salidas" stroke="#ff8042" name="Salidas" strokeWidth={2} />
-                          </LineChart>
-                        </ResponsiveContainer>
-                      </CardContent>
-                    </Card>
-
-                    <TableContainer component={Paper} variant="outlined">
-                      <Table>
-                        <TableHead>
-                          <TableRow sx={{ bgcolor: 'grey.100' }}>
-                            <TableCell sx={{ fontWeight: 600 }}>Fecha</TableCell>
-                            <TableCell sx={{ fontWeight: 600 }}>Tipo</TableCell>
-                            <TableCell align="center" sx={{ fontWeight: 600 }}>Movimientos</TableCell>
-                            <TableCell align="center" sx={{ fontWeight: 600 }}>Total Unidades</TableCell>
-                          </TableRow>
-                        </TableHead>
-                        <TableBody>
-                          {reporteMovimientos.map((mov, idx) => (
-                            <TableRow key={idx} hover>
-                              <TableCell>{formatearFecha(mov.fecha_dia)}</TableCell>
-                              <TableCell>
-                                <Chip
-                                  label={mov.tipo.toUpperCase()}
-                                  color={mov.tipo === 'entrada' ? 'success' : 'error'}
-                                  size="small"
-                                />
-                              </TableCell>
-                              <TableCell align="center">{mov.total_movimientos}</TableCell>
-                              <TableCell align="center" sx={{ fontWeight: 600 }}>
-                                {mov.total_unidades}
-                              </TableCell>
-                            </TableRow>
-                          ))}
-                        </TableBody>
-                      </Table>
-                    </TableContainer>
-                  </>
-                ) : (
-                  <Alert severity="info">
-                    Selecciona el rango de fechas y haz clic en "Generar Reporte"
-                  </Alert>
-                )}
-              </Box>
-            )}
-
-            {/* Tab 2: Top Productos */}
-            {tabActual === 2 && (
-              <Box>
-                <Typography variant="h6" gutterBottom>
-                  Productos Más Movidos
-                </Typography>
-
-                <Grid container spacing={2} sx={{ mb: 3 }}>
-                  <Grid item xs={12} sm={4}>
-                    <TextField
-                      fullWidth
-                      select
-                      label="Últimos días"
-                      value={diasTopProductos}
-                      onChange={(e) => setDiasTopProductos(e.target.value)}
-                    >
-                      <MenuItem value={7}>7 días</MenuItem>
-                      <MenuItem value={15}>15 días</MenuItem>
-                      <MenuItem value={30}>30 días</MenuItem>
-                      <MenuItem value={60}>60 días</MenuItem>
-                      <MenuItem value={90}>90 días</MenuItem>
-                    </TextField>
-                  </Grid>
-                  <Grid item xs={12} sm={4}>
-                    <TextField
-                      fullWidth
-                      select
-                      label="Límite de productos"
-                      value={limiteProductos}
-                      onChange={(e) => setLimiteProductos(e.target.value)}
-                    >
-                      <MenuItem value={5}>Top 5</MenuItem>
-                      <MenuItem value={10}>Top 10</MenuItem>
-                      <MenuItem value={20}>Top 20</MenuItem>
-                      <MenuItem value={50}>Top 50</MenuItem>
-                    </TextField>
-                  </Grid>
-                  <Grid item xs={12} sm={4}>
-                    <Button
-                      fullWidth
-                      variant="contained"
-                      onClick={cargarReporteTopProductos}
-                      disabled={loading}
-                      sx={{ height: '56px' }}
-                    >
-                      Generar Reporte
-                    </Button>
-                  </Grid>
-                </Grid>
-
-                {loading ? (
-                  <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
-                    <CircularProgress />
-                  </Box>
-                ) : reporteTopProductos.length > 0 ? (
-                  <>
-                    <Grid container spacing={3} sx={{ mb: 3 }}>
-                      <Grid item xs={12} lg={6}>
-                        <Card variant="outlined">
-                          <CardContent>
-                            <Typography variant="h6" gutterBottom>
-                              Comparación Entradas vs Salidas
-                            </Typography>
-                            <ResponsiveContainer width="100%" height={300}>
-                              <BarChart data={datosGraficaTopProductos}>
-                                <CartesianGrid strokeDasharray="3 3" />
-                                <XAxis dataKey="name" />
-                                <YAxis />
-                                <RechartsTooltip content={({ active, payload }) => {
-                                  if (active && payload && payload.length) {
-                                    return (
-                                      <Paper sx={{ p: 1 }}>
-                                        <Typography variant="body2" fontWeight="bold">
-                                          {payload[0].payload.nombreCompleto}
-                                        </Typography>
-                                        <Typography variant="caption" color="success.main">
-                                          Entradas: {payload[0].value}
-                                        </Typography>
-                                        <br />
-                                        <Typography variant="caption" color="error.main">
-                                          Salidas: {payload[1].value}
-                                        </Typography>
-                                      </Paper>
-                                    );
-                                  }
-                                  return null;
-                                }} />
-                                <Legend />
-                                <Bar dataKey="entradas" fill="#82ca9d" name="Entradas" />
-                                <Bar dataKey="salidas" fill="#ff8042" name="Salidas" />
-                              </BarChart>
-                            </ResponsiveContainer>
-                          </CardContent>
-                        </Card>
-                      </Grid>
-
-                      <Grid item xs={12} lg={6}>
-                        <Card variant="outlined">
-                          <CardContent>
-                            <Typography variant="h6" gutterBottom>
-                              Total de Movimientos
-                            </Typography>
-                            <ResponsiveContainer width="100%" height={300}>
-                              <BarChart data={datosGraficaTopProductos} layout="vertical">
-                                <CartesianGrid strokeDasharray="3 3" />
-                                <XAxis type="number" />
-                                <YAxis dataKey="name" type="category" width={80} />
-                                <RechartsTooltip content={({ active, payload }) => {
-                                  if (active && payload && payload.length) {
-                                    return (
-                                      <Paper sx={{ p: 1 }}>
-                                        <Typography variant="body2" fontWeight="bold">
-                                          {payload[0].payload.nombreCompleto}
-                                        </Typography>
-                                        <Typography variant="caption">
-                                          Movimientos: {payload[0].value}
-                                        </Typography>
-                                      </Paper>
-                                    );
-                                  }
-                                  return null;
-                                }} />
-                                <Bar dataKey="movimientos" fill="#8884d8" name="Total Movimientos">
-                                  {datosGraficaTopProductos.map((entry, index) => (
-                                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                                  ))}
-                                </Bar>
-                              </BarChart>
-                            </ResponsiveContainer>
-                          </CardContent>
-                        </Card>
-                      </Grid>
-                    </Grid>
-
-                    <TableContainer component={Paper} variant="outlined">
-                      <Table>
-                        <TableHead>
-                          <TableRow sx={{ bgcolor: 'grey.100' }}>
-                            <TableCell sx={{ fontWeight: 600 }}>Ranking</TableCell>
-                            <TableCell sx={{ fontWeight: 600 }}>Código</TableCell>
-                            <TableCell sx={{ fontWeight: 600 }}>Producto</TableCell>
-                            <TableCell sx={{ fontWeight: 600 }}>Categoría</TableCell>
-                            <TableCell align="center" sx={{ fontWeight: 600 }}>Movimientos</TableCell>
-                            <TableCell align="center" sx={{ fontWeight: 600 }}>Entradas</TableCell>
-                            <TableCell align="center" sx={{ fontWeight: 600 }}>Salidas</TableCell>
-                            <TableCell align="center" sx={{ fontWeight: 600 }}>Neto</TableCell>
-                          </TableRow>
-                        </TableHead>
-                        <TableBody>
-                          {reporteTopProductos.map((prod, idx) => (
-                            <TableRow key={idx} hover>
-                              <TableCell>
-                                <Avatar sx={{
-                                  bgcolor: idx < 3 ? 'warning.main' : 'grey.400',
-                                  width: 32,
-                                  height: 32,
-                                  fontSize: '0.875rem'
-                                }}>
-                                  {idx + 1}
-                                </Avatar>
-                              </TableCell>
-                              <TableCell>{prod.codigo}</TableCell>
-                              <TableCell sx={{ fontWeight: 600 }}>{prod.nombre}</TableCell>
-                              <TableCell>
-                                <Chip label={prod.categoria} size="small" variant="outlined" />
-                              </TableCell>
-                              <TableCell align="center">
-                                <Badge badgeContent={prod.total_movimientos} color="primary" max={999}>
-                                  <BarChartIcon />
-                                </Badge>
-                              </TableCell>
-                              <TableCell align="center" sx={{ color: 'success.main', fontWeight: 600 }}>
-                                +{prod.total_entradas}
-                              </TableCell>
-                              <TableCell align="center" sx={{ color: 'error.main', fontWeight: 600 }}>
-                                -{prod.total_salidas}
-                              </TableCell>
-                              <TableCell align="center">
-                                <Chip
-                                  label={prod.neto}
-                                  color={prod.neto >= 0 ? 'success' : 'error'}
-                                  size="small"
-                                  sx={{ fontWeight: 600 }}
-                                />
-                              </TableCell>
-                            </TableRow>
-                          ))}
-                        </TableBody>
-                      </Table>
-                    </TableContainer>
-                  </>
-                ) : (
-                  <Alert severity="info">
-                    Selecciona los parámetros y haz clic en "Generar Reporte"
-                  </Alert>
-                )}
-              </Box>
-            )}
-
-            {/* Tab 3: Inventario Completo */}
-            {tabActual === 3 && (
-              <Box>
-                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-                  <Typography variant="h6">Inventario Completo</Typography>
-                  <Stack direction="row" spacing={2}>
-                    <Button
-                      variant="contained"
-                      color="primary"
-                      startIcon={<AddIcon />}
-                      onClick={abrirModalCrear}
-                    >
-                      Nuevo Producto
-                    </Button>
-                    <Button
-                      variant="outlined"
-                      startIcon={<RefreshIcon />}
-                      onClick={cargarInventarioCompleto}
-                      disabled={loading}
-                    >
-                      Actualizar
-                    </Button>
-                  </Stack>
-                </Box>
-
-                {/* Filtros */}
-                <Card variant="outlined" sx={{ mb: 3 }}>
-                  <CardContent>
-                    <Typography variant="h6" gutterBottom sx={{ display: 'flex', alignItems: 'center' }}>
-                      <FilterListIcon sx={{ mr: 1 }} />
-                      Filtros
-                    </Typography>
-                    <Grid container spacing={2}>
-                      <Grid item xs={12} sm={6}>
-                        <FormControl fullWidth>
-                          <InputLabel>Estado del Producto</InputLabel>
-                          <Select
-                            value={filtroActivo}
-                            label="Estado del Producto"
-                            onChange={(e) => setFiltroActivo(e.target.value)}
-                          >
-                            <MenuItem value="todos">Todos los productos</MenuItem>
-                            <MenuItem value="activos">Solo Activos</MenuItem>
-                            <MenuItem value="inactivos">Solo Inactivos</MenuItem>
-                          </Select>
-                        </FormControl>
-                      </Grid>
-                      <Grid item xs={12} sm={6}>
-                        <FormControl fullWidth>
-                          <InputLabel>Nivel de Stock</InputLabel>
-                          <Select
-                            value={filtroStock}
-                            label="Nivel de Stock"
-                            onChange={(e) => setFiltroStock(e.target.value)}
-                          >
-                            <MenuItem value="todos">Todos los niveles</MenuItem>
-                            <MenuItem value="bajo">Stock Bajo</MenuItem>
-                            <MenuItem value="normal">Stock Normal</MenuItem>
-                          </Select>
-                        </FormControl>
-                      </Grid>
-                    </Grid>
-                   
-                    {/* Resumen de filtros */}
-                    <Box sx={{ mt: 2 }}>
-                      <Typography variant="body2" color="text.secondary">
-                        Mostrando {inventarioFiltrado.length} de {inventarioCompleto.length} productos
-                      </Typography>
+                        <Typography variant="body2" sx={{ color: 'rgba(0,0,0,0.6)' }}>
+                          Atención requerida en inventario
+                        </Typography>
+                      </Box>
                     </Box>
-                  </CardContent>
-                </Card>
-
-                {loading ? (
-                  <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
-                    <CircularProgress />
+                    <Button 
+                      variant="contained" 
+                      size="small"
+                      sx={{ bgcolor: '#ff9500', '&:hover': { bgcolor: '#e68900' } }}
+                    >
+                      Ver Detalles
+                    </Button>
                   </Box>
-                ) : (
-                  <TableContainer component={Paper} variant="outlined">
-                    <Table>
-                      <TableHead>
-                        <TableRow sx={{ bgcolor: 'grey.100' }}>
-                          <TableCell sx={{ fontWeight: 600 }}>Código</TableCell>
-                          <TableCell sx={{ fontWeight: 600 }}>Nombre</TableCell>
-                          <TableCell sx={{ fontWeight: 600 }}>Categoría</TableCell>
-                          <TableCell align="center" sx={{ fontWeight: 600 }}>Stock Actual</TableCell>
-                          <TableCell align="center" sx={{ fontWeight: 600 }}>Stock Mínimo</TableCell>
-                          <TableCell align="right" sx={{ fontWeight: 600 }}>Precio</TableCell>
-                          <TableCell align="center" sx={{ fontWeight: 600 }}>Estado Stock</TableCell>
-                          <TableCell align="center" sx={{ fontWeight: 600 }}>Estado</TableCell>
-                          <TableCell align="center" sx={{ fontWeight: 600 }}>Acciones</TableCell>
-                        </TableRow>
-                      </TableHead>
-                      <TableBody>
-                        {inventarioFiltrado.length > 0 ? (
-                          inventarioFiltrado.map((producto) => (
-                            <TableRow
-                              key={producto.id}
-                              hover
-                              sx={{
-                                opacity: esActivo(producto.activo) ? 1 : 0.6,
-                                bgcolor: esActivo(producto.activo) ? 'inherit' : 'grey.50'
-                              }}
-                            >
-                              <TableCell>{producto.codigo}</TableCell>
-                              <TableCell sx={{ fontWeight: 600 }}>{producto.nombre}</TableCell>
-                              <TableCell>
-                                <Chip label={producto.categoria} size="small" variant="outlined" />
-                              </TableCell>
-                              <TableCell align="center" sx={{ fontWeight: 700, fontSize: '1.1rem' }}>
-                                {producto.stock}
-                              </TableCell>
-                              <TableCell align="center">{producto.stock_minimo}</TableCell>
-                              <TableCell align="right" sx={{ color: 'success.main', fontWeight: 600 }}>
-                                {formatearMoneda(producto.precio)}
-                              </TableCell>
-                              <TableCell align="center">
-                                <Chip
-                                  label={Number(producto.stock) <= Number(producto.stock_minimo) ? 'BAJO' : 'NORMAL'}
-                                  color={Number(producto.stock) <= Number(producto.stock_minimo) ? 'error' : 'success'}
-                                  size="small"
-                                  icon={Number(producto.stock) <= Number(producto.stock_minimo) ? <WarningIcon /> : <CheckCircleIcon />}
-                                />
-                              </TableCell>
-                              <TableCell align="center">
-                                <Chip
-                                  label={esActivo(producto.activo) ? 'ACTIVO' : 'INACTIVO'}
-                                  color={esActivo(producto.activo) ? 'success' : 'default'}
-                                  size="small"
-                                  icon={esActivo(producto.activo) ? <CheckCircleIcon /> : <CancelIcon />}
-                                  variant={esActivo(producto.activo) ? 'filled' : 'outlined'}
-                                />
-                              </TableCell>
-                              <TableCell align="center">
-                                <Stack direction="row" spacing={1} justifyContent="center">
-                                  <Tooltip title="Editar">
-                                    <IconButton
-                                      size="small"
-                                      color="primary"
-                                      onClick={() => abrirModalEditar(producto)}
-                                    >
-                                      <EditIcon fontSize="small" />
-                                    </IconButton>
-                                  </Tooltip>
-                                  <Tooltip title={esActivo(producto.activo) ? 'Desactivar' : 'Activar'}>
-                                    <IconButton
-                                      size="small"
-                                      color={esActivo(producto.activo) ? 'error' : 'success'}
-                                      onClick={() => toggleEstadoProducto(producto)}
-                                    >
-                                      {esActivo(producto.activo) ? <DeleteIcon fontSize="small" /> : <RestoreIcon fontSize="small" />}
-                                    </IconButton>
-                                  </Tooltip>
-                                </Stack>
-                              </TableCell>
-                            </TableRow>
-                          ))
-                        ) : (
-                          <TableRow>
-                            <TableCell colSpan={9} align="center">
-                              <Alert severity="info">
-                                No se encontraron productos con los filtros seleccionados
-                              </Alert>
-                            </TableCell>
-                          </TableRow>
-                        )}
-                      </TableBody>
-                    </Table>
-                  </TableContainer>
-                )}
-              </Box>
+                </CardContent>
+              </Card>
             )}
 
-            {/* Tab 4: Dashboard General */}
-            {tabActual === 4 && (
-              <Box>
-                <Typography variant="h5" gutterBottom sx={{ mb: 3 }}>
-                  Dashboard de Analytics
-                </Typography>
+            {/* Tabs verticales en lugar de horizontales */}
+            <Card sx={{ borderRadius: 3, mb: 3 }}>
+              <CardContent sx={{ p: 0 }}>
+                <Box sx={{ display: 'flex' }}>
+                  <Box sx={{ 
+                    width: 200, 
+                    bgcolor: 'rgba(0,0,0,0.02)',
+                    borderRight: '1px solid rgba(0,0,0,0.08)'
+                  }}>
+                    {[
+                      { icon: <CategoryIcon />, label: 'Categories' },
+                      { icon: <TimelineIcon />, label: 'Movements' },
+                      { icon: <TrendingUpIcon />, label: 'Top Products' },
+                      { icon: <InventoryIcon />, label: 'Inventory' },
+                      { icon: <DashboardIcon />, label: 'Dashboard' }
+                    ].map((tab, index) => (
+                      <Button
+                        key={index}
+                        fullWidth
+                        startIcon={tab.icon}
+                        onClick={() => setTabActual(index)}
+                        sx={{
+                          justifyContent: 'flex-start',
+                          px: 3,
+                          py: 2,
+                          borderRadius: 0,
+                          borderBottom: '1px solid rgba(0,0,0,0.04)',
+                          bgcolor: tabActual === index ? 'rgba(0,0,0,0.04)' : 'transparent',
+                          color: tabActual === index ? '#000' : 'rgba(0,0,0,0.7)',
+                          fontWeight: tabActual === index ? 600 : 400,
+                          '&:hover': {
+                            bgcolor: 'rgba(0,0,0,0.02)'
+                          }
+                        }}
+                      >
+                        {tab.label}
+                      </Button>
+                    ))}
+                  </Box>
+                  
+                  <Box sx={{ flex: 1, p: 3 }}>
+                    {/* Tab 0: Reporte por Categorías - Diseño reorganizado */}
+                    {tabActual === 0 && (
+                      <Box>
+                        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+                          <Box>
+                            <Typography variant="h5" sx={{ fontWeight: 800, mb: 1 }}>
+                              Category Analysis
+                            </Typography>
+                            <Typography variant="body2" sx={{ color: 'rgba(0,0,0,0.6)' }}>
+                              Detailed breakdown by product categories
+                            </Typography>
+                          </Box>
+                          <Button
+                            variant="outlined"
+                            startIcon={<RefreshIcon />}
+                            onClick={cargarReporteCategorias}
+                          >
+                            Refresh
+                          </Button>
+                        </Box>
 
-                <Grid container spacing={3}>
-                  <Grid item xs={12}>
-                    <Card variant="outlined">
-                      <CardContent>
-                        <Typography variant="h6" gutterBottom>
-                          Resumen General de Inventario
-                        </Typography>
-                        <ResponsiveContainer width="100%" height={350}>
-                          <BarChart data={datosGraficaCategorias}>
-                            <CartesianGrid strokeDasharray="3 3" />
-                            <XAxis dataKey="name" />
-                            <YAxis yAxisId="left" />
-                            <YAxis yAxisId="right" orientation="right" />
-                            <RechartsTooltip />
-                            <Legend />
-                            <Bar yAxisId="left" dataKey="productos" fill="#8884d8" name="Cantidad Productos" />
-                            <Bar yAxisId="left" dataKey="stock" fill="#82ca9d" name="Stock Total" />
-                            <Bar yAxisId="right" dataKey="valor" fill="#ffc658" name="Valor (MXN)" />
-                          </BarChart>
-                        </ResponsiveContainer>
-                      </CardContent>
-                    </Card>
-                  </Grid>
-
-                  <Grid item xs={12} md={6}>
-                    <Card variant="outlined">
-                      <CardContent>
-                        <Typography variant="h6" gutterBottom>
-                          Distribución de Stock por Categoría
-                        </Typography>
-                        <ResponsiveContainer width="100%" height={250}>
-                          <PieChart>
-                            <Pie
-                              data={datosGraficaCategorias}
-                              dataKey="stock"
-                              nameKey="name"
-                              cx="50%"
-                              cy="50%"
-                              outerRadius={80}
-                              label
-                            >
-                              {datosGraficaCategorias.map((entry, index) => (
-                                <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                              ))}
-                            </Pie>
-                            <RechartsTooltip />
-                            <Legend />
-                          </PieChart>
-                        </ResponsiveContainer>
-                      </CardContent>
-                    </Card>
-                  </Grid>
-
-                  <Grid item xs={12} md={6}>
-                    <Card variant="outlined">
-                      <CardContent>
-                        <Typography variant="h6" gutterBottom>
-                          Top 5 Categorías por Valor
-                        </Typography>
-                        <List>
-                          {datosGraficaCategorias
-                            .sort((a, b) => b.valor - a.valor)
-                            .slice(0, 5)
-                            .map((cat, idx) => (
-                              <ListItem key={idx}>
-                                <Avatar sx={{
-                                  bgcolor: COLORS[idx % COLORS.length],
-                                  mr: 2
-                                }}>
-                                  {idx + 1}
-                                </Avatar>
-                                <ListItemText
-                                  primary={cat.name}
-                                  secondary={
-                                    <>
-                                      <Typography component="span" variant="body2" color="text.primary">
-                                        {formatearMoneda(cat.valor)}
-                                      </Typography>
-                                      {` — ${cat.productos} productos, ${cat.stock} unidades`}
-                                    </>
-                                  }
-                                />
-                              </ListItem>
-                            ))}
-                        </List>
-                      </CardContent>
-                    </Card>
-                  </Grid>
-
-                  {alertasStock.length > 0 && (
-                    <Grid item xs={12}>
-                      <Card variant="outlined" sx={{ borderColor: 'warning.main' }}>
-                        <CardContent>
-                          <Typography variant="h6" gutterBottom color="warning.main">
-                            Estado de Alertas de Stock
-                          </Typography>
-                          <Grid container spacing={2}>
-                            <Grid item xs={12} sm={4}>
-                              <Card sx={{ bgcolor: 'error.light' }}>
+                        {loading ? (
+                          <Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}>
+                            <CircularProgress />
+                          </Box>
+                        ) : (
+                          <Grid container spacing={3}>
+                            {/* Gráfico circular a la izquierda, tabla a la derecha */}
+                            <Grid item xs={12} lg={5}>
+                              <Card sx={{ height: '100%' }}>
                                 <CardContent>
-                                  <Typography variant="h3" color="error.dark">
-                                    {alertasStock.filter(a => a.tipo_alerta === 'critico').length}
+                                  <Typography variant="h6" sx={{ mb: 2 }}>
+                                    Value Distribution
                                   </Typography>
-                                  <Typography variant="body2">Alertas Críticas</Typography>
+                                  <ResponsiveContainer width="100%" height={300}>
+                                    <PieChart>
+                                      <Pie
+                                        data={datosGraficaCategorias}
+                                        dataKey="valor"
+                                        nameKey="name"
+                                        cx="50%"
+                                        cy="50%"
+                                        outerRadius={80}
+                                        label
+                                      >
+                                        {datosGraficaCategorias.map((entry, index) => (
+                                          <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                                        ))}
+                                      </Pie>
+                                      <RechartsTooltip formatter={(value) => formatearMoneda(value)} />
+                                    </PieChart>
+                                  </ResponsiveContainer>
                                 </CardContent>
                               </Card>
                             </Grid>
-                            <Grid item xs={12} sm={4}>
-                              <Card sx={{ bgcolor: 'warning.light' }}>
-                                <CardContent>
-                                  <Typography variant="h3" color="warning.dark">
-                                    {alertasStock.filter(a => a.tipo_alerta === 'alerta').length}
-                                  </Typography>
-                                  <Typography variant="body2">Alertas Preventivas</Typography>
-                                </CardContent>
-                              </Card>
-                            </Grid>
-                            <Grid item xs={12} sm={4}>
-                              <Card sx={{ bgcolor: 'info.light' }}>
-                                <CardContent>
-                                  <Typography variant="h3" color="info.dark">
-                                    {alertasStock.length}
-                                  </Typography>
-                                  <Typography variant="body2">Total Alertas</Typography>
+
+                            <Grid item xs={12} lg={7}>
+                              <Card sx={{ height: '100%' }}>
+                                <CardContent sx={{ p: 0 }}>
+                                  <TableContainer>
+                                    <Table>
+                                      <TableHead>
+                                        <TableRow>
+                                          <TableCell>Category</TableCell>
+                                          <TableCell align="right">Products</TableCell>
+                                          <TableCell align="right">Stock</TableCell>
+                                          <TableCell align="right">Value</TableCell>
+                                          <TableCell align="center">Actions</TableCell>
+                                        </TableRow>
+                                      </TableHead>
+                                      <TableBody>
+                                        {reporteCategorias.map((cat, idx) => (
+                                          <TableRow key={idx}>
+                                            <TableCell>
+                                              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                                <Box sx={{ width: 12, height: 12, bgcolor: COLORS[idx % COLORS.length], borderRadius: '50%' }} />
+                                                {cat.categoria}
+                                              </Box>
+                                            </TableCell>
+                                            <TableCell align="right">{cat.cantidad_productos}</TableCell>
+                                            <TableCell align="right">{cat.total_stock}</TableCell>
+                                            <TableCell align="right">
+                                              <Typography sx={{ fontWeight: 600 }}>
+                                                {formatearMoneda(cat.valor_total)}
+                                              </Typography>
+                                            </TableCell>
+                                            <TableCell align="center">
+                                              <IconButton size="small" onClick={() => verProductosCategoria(cat.categoria)}>
+                                                <VisibilityIcon fontSize="small" />
+                                              </IconButton>
+                                            </TableCell>
+                                          </TableRow>
+                                        ))}
+                                      </TableBody>
+                                    </Table>
+                                  </TableContainer>
                                 </CardContent>
                               </Card>
                             </Grid>
                           </Grid>
-                        </CardContent>
-                      </Card>
-                    </Grid>
-                  )}
-                </Grid>
-              </Box>
-            )}
-          </CardContent>
-        </Card>
+                        )}
+                      </Box>
+                    )}
+
+                    {/* Tab 1: Movimientos - Diseño reorganizado */}
+                    {tabActual === 1 && (
+                      <Box>
+                        <Typography variant="h5" sx={{ fontWeight: 800, mb: 3 }}>
+                          Movement Analysis
+                        </Typography>
+
+                        {/* Filtros en línea */}
+                        <Card sx={{ mb: 3, p: 2 }}>
+                          <Grid container spacing={2} alignItems="center">
+                            <Grid item xs={12} md={3}>
+                              <TextField
+                                fullWidth
+                                type="date"
+                                label="Start Date"
+                                value={fechaInicio}
+                                onChange={(e) => setFechaInicio(e.target.value)}
+                                InputProps={{ startAdornment: <CalendarIcon sx={{ mr: 1, color: 'rgba(0,0,0,0.4)' }} /> }}
+                              />
+                            </Grid>
+                            <Grid item xs={12} md={3}>
+                              <TextField
+                                fullWidth
+                                type="date"
+                                label="End Date"
+                                value={fechaFin}
+                                onChange={(e) => setFechaFin(e.target.value)}
+                                InputProps={{ startAdornment: <CalendarIcon sx={{ mr: 1, color: 'rgba(0,0,0,0.4)' }} /> }}
+                              />
+                            </Grid>
+                            <Grid item xs={12} md={4}>
+                              <TextField
+                                fullWidth
+                                label="Search"
+                                value={busqueda}
+                                onChange={(e) => setBusqueda(e.target.value)}
+                                InputProps={{ startAdornment: <SearchIcon sx={{ mr: 1, color: 'rgba(0,0,0,0.4)' }} /> }}
+                              />
+                            </Grid>
+                            <Grid item xs={12} md={2}>
+                              <Button
+                                fullWidth
+                                variant="contained"
+                                onClick={cargarReporteMovimientos}
+                                disabled={loading}
+                              >
+                                Generate
+                              </Button>
+                            </Grid>
+                          </Grid>
+                        </Card>
+
+                        {reporteMovimientos.length > 0 && (
+                          <Grid container spacing={3}>
+                            <Grid item xs={12}>
+                              <Card>
+                                <CardContent>
+                                  <Typography variant="h6" sx={{ mb: 2 }}>
+                                    Movement Trends
+                                  </Typography>
+                                  <ResponsiveContainer width="100%" height={300}>
+                                    <LineChart data={datosGraficaMovimientos}>
+                                      <CartesianGrid strokeDasharray="3 3" />
+                                      <XAxis dataKey="fecha" />
+                                      <YAxis />
+                                      <RechartsTooltip />
+                                      <Legend />
+                                      <Line type="monotone" dataKey="entradas" stroke="#34c759" strokeWidth={2} />
+                                      <Line type="monotone" dataKey="salidas" stroke="#ff3b30" strokeWidth={2} />
+                                    </LineChart>
+                                  </ResponsiveContainer>
+                                </CardContent>
+                              </Card>
+                            </Grid>
+                          </Grid>
+                        )}
+                      </Box>
+                    )}
+
+                    {/* Tab 2: Top Productos - Diseño reorganizado */}
+                    {tabActual === 2 && (
+                      <Box>
+                        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+                          <Box>
+                            <Typography variant="h5" sx={{ fontWeight: 800, mb: 1 }}>
+                              Top Products Performance
+                            </Typography>
+                            <Typography variant="body2" sx={{ color: 'rgba(0,0,0,0.6)' }}>
+                              Most moved products in selected period
+                            </Typography>
+                          </Box>
+                          <Box sx={{ display: 'flex', gap: 2 }}>
+                            <TextField
+                              select
+                              size="small"
+                              label="Period"
+                              value={diasTopProductos}
+                              onChange={(e) => setDiasTopProductos(e.target.value)}
+                              sx={{ width: 120 }}
+                            >
+                              <MenuItem value={7}>7 days</MenuItem>
+                              <MenuItem value={30}>30 days</MenuItem>
+                              <MenuItem value={90}>90 days</MenuItem>
+                            </TextField>
+                            <Button
+                              variant="contained"
+                              onClick={cargarReporteTopProductos}
+                            >
+                              Update
+                            </Button>
+                          </Box>
+                        </Box>
+
+                        {reporteTopProductos.length > 0 && (
+                          <Grid container spacing={3}>
+                            <Grid item xs={12}>
+                              <Card>
+                                <CardContent>
+                                  <Typography variant="h6" sx={{ mb: 2 }}>
+                                    Product Movement Comparison
+                                  </Typography>
+                                  <ResponsiveContainer width="100%" height={400}>
+                                    <BarChart data={datosGraficaTopProductos}>
+                                      <CartesianGrid strokeDasharray="3 3" />
+                                      <XAxis dataKey="name" />
+                                      <YAxis />
+                                      <RechartsTooltip />
+                                      <Legend />
+                                      <Bar dataKey="entradas" fill="#34c759" name="Incoming" />
+                                      <Bar dataKey="salidas" fill="#ff3b30" name="Outgoing" />
+                                    </BarChart>
+                                  </ResponsiveContainer>
+                                </CardContent>
+                              </Card>
+                            </Grid>
+                          </Grid>
+                        )}
+                      </Box>
+                    )}
+
+                    {/* Tab 3: Inventario - Diseño reorganizado */}
+                    {tabActual === 3 && (
+                      <Box>
+                        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+                          <Box>
+                            <Typography variant="h5" sx={{ fontWeight: 800, mb: 1 }}>
+                              Inventory Management
+                            </Typography>
+                            <Typography variant="body2" sx={{ color: 'rgba(0,0,0,0.6)' }}>
+                              Complete product inventory with filters and actions
+                            </Typography>
+                          </Box>
+                          <Button
+                            variant="contained"
+                            startIcon={<AddIcon />}
+                            onClick={abrirModalCrear}
+                          >
+                            Add Product
+                          </Button>
+                        </Box>
+
+                        {/* Filtros en tarjeta separada */}
+                        <Card sx={{ mb: 3, p: 2 }}>
+                          <Grid container spacing={2} alignItems="center">
+                            <Grid item xs={12} md={4}>
+                              <TextField
+                                fullWidth
+                                label="Search products..."
+                                value={busqueda}
+                                onChange={(e) => setBusqueda(e.target.value)}
+                                InputProps={{ startAdornment: <SearchIcon sx={{ mr: 1, color: 'rgba(0,0,0,0.4)' }} /> }}
+                              />
+                            </Grid>
+                            <Grid item xs={12} md={3}>
+                              <FormControl fullWidth>
+                                <InputLabel>Stock Status</InputLabel>
+                                <Select value={filtroStock} label="Stock Status" onChange={(e) => setFiltroStock(e.target.value)}>
+                                  <MenuItem value="todos">All</MenuItem>
+                                  <MenuItem value="bajo">Low Stock</MenuItem>
+                                  <MenuItem value="normal">Normal</MenuItem>
+                                </Select>
+                              </FormControl>
+                            </Grid>
+                            <Grid item xs={12} md={3}>
+                              <FormControl fullWidth>
+                                <InputLabel>Product Status</InputLabel>
+                                <Select value={filtroActivo} label="Product Status" onChange={(e) => setFiltroActivo(e.target.value)}>
+                                  <MenuItem value="todos">All</MenuItem>
+                                  <MenuItem value="activos">Active</MenuItem>
+                                  <MenuItem value="inactivos">Inactive</MenuItem>
+                                </Select>
+                              </FormControl>
+                            </Grid>
+                            <Grid item xs={12} md={2}>
+                              <Button
+                                fullWidth
+                                variant="outlined"
+                                startIcon={<FilterListIcon />}
+                                onClick={cargarInventarioCompleto}
+                              >
+                                Filter
+                              </Button>
+                            </Grid>
+                          </Grid>
+                        </Card>
+
+                        {/* Tabla de inventario */}
+                        <Card>
+                          <TableContainer>
+                            <Table>
+                              <TableHead>
+                                <TableRow>
+                                  <TableCell>Product</TableCell>
+                                  <TableCell align="center">Category</TableCell>
+                                  <TableCell align="center">Stock</TableCell>
+                                  <TableCell align="right">Price</TableCell>
+                                  <TableCell align="center">Status</TableCell>
+                                  <TableCell align="center">Actions</TableCell>
+                                </TableRow>
+                              </TableHead>
+                              <TableBody>
+                                {inventarioFiltrado.map((producto) => (
+                                  <TableRow key={producto.id}>
+                                    <TableCell>
+                                      <Box>
+                                        <Typography sx={{ fontWeight: 600 }}>
+                                          {producto.nombre}
+                                        </Typography>
+                                        <Typography variant="caption" sx={{ color: 'rgba(0,0,0,0.6)' }}>
+                                          {producto.codigo}
+                                        </Typography>
+                                      </Box>
+                                    </TableCell>
+                                    <TableCell align="center">
+                                      <Chip label={producto.categoria} size="small" />
+                                    </TableCell>
+                                    <TableCell align="center">
+                                      <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 1 }}>
+                                        <Typography sx={{ fontWeight: 700 }}>
+                                          {producto.stock}
+                                        </Typography>
+                                        {Number(producto.stock) <= Number(producto.stock_minimo) && (
+                                          <ArrowDownIcon sx={{ color: '#ff3b30', fontSize: 16 }} />
+                                        )}
+                                      </Box>
+                                    </TableCell>
+                                    <TableCell align="right" sx={{ fontWeight: 600 }}>
+                                      {formatearMoneda(producto.precio)}
+                                    </TableCell>
+                                    <TableCell align="center">
+                                      <Chip
+                                        label={esActivo(producto.activo) ? 'Active' : 'Inactive'}
+                                        size="small"
+                                        color={esActivo(producto.activo) ? 'success' : 'default'}
+                                        variant="outlined"
+                                      />
+                                    </TableCell>
+                                    <TableCell align="center">
+                                      <Stack direction="row" spacing={1} justifyContent="center">
+                                        <Tooltip title="Edit">
+                                          <IconButton size="small" onClick={() => abrirModalEditar(producto)}>
+                                            <EditIcon fontSize="small" />
+                                          </IconButton>
+                                        </Tooltip>
+                                        <Tooltip title={esActivo(producto.activo) ? 'Deactivate' : 'Activate'}>
+                                          <IconButton size="small" onClick={() => toggleEstadoProducto(producto)}>
+                                            {esActivo(producto.activo) ? (
+                                              <DeleteIcon fontSize="small" />
+                                            ) : (
+                                              <RestoreIcon fontSize="small" />
+                                            )}
+                                          </IconButton>
+                                        </Tooltip>
+                                      </Stack>
+                                    </TableCell>
+                                  </TableRow>
+                                ))}
+                              </TableBody>
+                            </Table>
+                          </TableContainer>
+                        </Card>
+                      </Box>
+                    )}
+
+                    {/* Tab 4: Dashboard - Diseño reorganizado */}
+                    {tabActual === 4 && (
+                      <Box>
+                        <Typography variant="h5" sx={{ fontWeight: 800, mb: 3 }}>
+                          Analytics Dashboard
+                        </Typography>
+                        <Grid container spacing={3}>
+                          <Grid item xs={12}>
+                            <Card>
+                              <CardContent>
+                                <Typography variant="h6" sx={{ mb: 2 }}>
+                                  Inventory Overview
+                                </Typography>
+                                <ResponsiveContainer width="100%" height={350}>
+                                  <BarChart data={datosGraficaCategorias}>
+                                    <CartesianGrid strokeDasharray="3 3" />
+                                    <XAxis dataKey="name" />
+                                    <YAxis yAxisId="left" />
+                                    <YAxis yAxisId="right" orientation="right" />
+                                    <RechartsTooltip />
+                                    <Legend />
+                                    <Bar yAxisId="left" dataKey="productos" fill="#666666" name="Products" />
+                                    <Bar yAxisId="left" dataKey="stock" fill="#999999" name="Stock" />
+                                    <Bar yAxisId="right" dataKey="valor" fill="#000000" name="Value (MXN)" />
+                                  </BarChart>
+                                </ResponsiveContainer>
+                              </CardContent>
+                            </Card>
+                          </Grid>
+                        </Grid>
+                      </Box>
+                    )}
+                  </Box>
+                </Box>
+              </CardContent>
+            </Card>
+          </Grid>
+        </Grid>
       </Container>
 
-      {/* Modal para ver productos por categoría */}
+      {/* Modales (sin cambios en estructura interna, solo posicionamiento) */}
       <Dialog
         open={modalCategoria}
         onClose={() => setModalCategoria(false)}
@@ -1722,44 +1499,48 @@ const Reportes = () => {
         fullWidth
       >
         <DialogTitle>
-          Productos en {categoriaSeleccionada}
+          Products in {categoriaSeleccionada}
+          <Typography variant="caption" display="block" sx={{ color: 'rgba(0,0,0,0.6)' }}>
+            {productosPorCategoria.length} products found
+          </Typography>
         </DialogTitle>
         <DialogContent>
           {productosPorCategoria.length > 0 ? (
             <TableContainer>
-              <Table size="small">
+              <Table>
                 <TableHead>
                   <TableRow>
-                    <TableCell>Código</TableCell>
-                    <TableCell>Nombre</TableCell>
+                    <TableCell>Product</TableCell>
                     <TableCell align="center">Stock</TableCell>
-                    <TableCell align="center">Mínimo</TableCell>
-                    <TableCell align="right">Precio</TableCell>
-                    <TableCell align="center">Estado Stock</TableCell>
-                    <TableCell align="center">Estado</TableCell>
+                    <TableCell align="right">Price</TableCell>
+                    <TableCell align="center">Status</TableCell>
                   </TableRow>
                 </TableHead>
                 <TableBody>
                   {productosPorCategoria.map((prod) => (
                     <TableRow key={prod.id}>
-                      <TableCell>{prod.codigo}</TableCell>
-                      <TableCell>{prod.nombre}</TableCell>
-                      <TableCell align="center" sx={{ fontWeight: 700 }}>{prod.stock}</TableCell>
-                      <TableCell align="center">{prod.stock_minimo}</TableCell>
-                      <TableCell align="right">{formatearMoneda(prod.precio)}</TableCell>
+                      <TableCell>
+                        <Box>
+                          <Typography sx={{ fontWeight: 600 }}>{prod.nombre}</Typography>
+                          <Typography variant="caption" sx={{ color: 'rgba(0,0,0,0.6)' }}>{prod.codigo}</Typography>
+                        </Box>
+                      </TableCell>
                       <TableCell align="center">
-                        <Chip
-                          label={Number(prod.stock) <= Number(prod.stock_minimo) ? 'Bajo' : 'Normal'}
-                          color={Number(prod.stock) <= Number(prod.stock_minimo) ? 'error' : 'success'}
-                          size="small"
-                        />
+                        <Box>
+                          <Typography sx={{ fontWeight: 700 }}>{prod.stock}</Typography>
+                          <Typography variant="caption" sx={{ color: 'rgba(0,0,0,0.6)' }}>
+                            Min: {prod.stock_minimo}
+                          </Typography>
+                        </Box>
+                      </TableCell>
+                      <TableCell align="right" sx={{ fontWeight: 600 }}>
+                        {formatearMoneda(prod.precio)}
                       </TableCell>
                       <TableCell align="center">
                         <Chip
-                          label={esActivo(prod.activo) ? 'Activo' : 'Inactivo'}
-                          color={esActivo(prod.activo) ? 'success' : 'default'}
+                          label={esActivo(prod.activo) ? 'Active' : 'Inactive'}
                           size="small"
-                          variant={esActivo(prod.activo) ? 'filled' : 'outlined'}
+                          color={esActivo(prod.activo) ? 'success' : 'default'}
                         />
                       </TableCell>
                     </TableRow>
@@ -1768,15 +1549,14 @@ const Reportes = () => {
               </Table>
             </TableContainer>
           ) : (
-            <Alert severity="info">No hay productos en esta categoría</Alert>
+            <Alert severity="info">No products in this category</Alert>
           )}
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setModalCategoria(false)}>Cerrar</Button>
+          <Button onClick={() => setModalCategoria(false)}>Close</Button>
         </DialogActions>
       </Dialog>
 
-      {/* Modal para crear/editar producto */}
       <Dialog
         open={modalProducto}
         onClose={() => setModalProducto(false)}
@@ -1784,157 +1564,155 @@ const Reportes = () => {
         fullWidth
       >
         <DialogTitle>
-          {modoEdicion ? 'Editar Producto' : 'Crear Nuevo Producto'}
+          {modoEdicion ? 'Edit Product' : 'Create Product'}
         </DialogTitle>
         <DialogContent>
-          <Box sx={{ pt: 2 }}>
-            <Grid container spacing={2}>
-              <Grid item xs={12} sm={6}>
-                <TextField
-                  fullWidth
-                  label="Código"
-                  name="codigo"
-                  value={formProducto.codigo}
-                  onChange={handleInputChange}
-                  required
-                  disabled={modoEdicion}
-                  error={!!erroresForm.codigo}
-                  helperText={erroresForm.codigo || `${formProducto.codigo.length}/${LIMITES_CARACTERES.codigo}`}
-                  inputProps={{ maxLength: LIMITES_CARACTERES.codigo }}
-                />
-              </Grid>
-              <Grid item xs={12} sm={6}>
-                <TextField
-                  fullWidth
-                  label="Categoría"
-                  name="categoria"
-                  value={formProducto.categoria}
-                  onChange={handleInputChange}
-                  required
-                  error={!!erroresForm.categoria}
-                  helperText={erroresForm.categoria || `${formProducto.categoria.length}/${LIMITES_CARACTERES.categoria}`}
-                  inputProps={{ maxLength: LIMITES_CARACTERES.categoria }}
-                />
-              </Grid>
-              <Grid item xs={12}>
-                <TextField
-                  fullWidth
-                  label="Nombre"
-                  name="nombre"
-                  value={formProducto.nombre}
-                  onChange={handleInputChange}
-                  required
-                  error={!!erroresForm.nombre}
-                  helperText={erroresForm.nombre || `${formProducto.nombre.length}/${LIMITES_CARACTERES.nombre}`}
-                  inputProps={{ maxLength: LIMITES_CARACTERES.nombre }}
-                />
-              </Grid>
-              <Grid item xs={12}>
-                <TextField
-                  fullWidth
-                  label="Descripción"
-                  name="descripcion"
-                  value={formProducto.descripcion}
-                  onChange={handleInputChange}
-                  multiline
-                  rows={2}
-                  error={!!erroresForm.descripcion}
-                  helperText={erroresForm.descripcion || `${formProducto.descripcion.length}/${LIMITES_CARACTERES.descripcion}`}
-                  inputProps={{ maxLength: LIMITES_CARACTERES.descripcion }}
-                />
-              </Grid>
-              <Grid item xs={12} sm={4}>
-                <TextField
-                  fullWidth
-                  select
-                  label="Unidad"
-                  name="unidad"
-                  value={formProducto.unidad}
-                  onChange={handleInputChange}
-                >
-                  <MenuItem value="unidad">Unidad</MenuItem>
-                  <MenuItem value="kg">Kilogramo</MenuItem>
-                  <MenuItem value="g">Gramo</MenuItem>
-                  <MenuItem value="l">Litro</MenuItem>
-                  <MenuItem value="ml">Mililitro</MenuItem>
-                  <MenuItem value="caja">Caja</MenuItem>
-                  <MenuItem value="paquete">Paquete</MenuItem>
-                  <MenuItem value="par">Par</MenuItem>
-                </TextField>
-              </Grid>
-              <Grid item xs={12} sm={4}>
-                <TextField
-                  fullWidth
-                  label="Stock Inicial"
-                  name="stock"
-                  type="number"
-                  value={formProducto.stock}
-                  onChange={handleInputChange}
-                  required
-                  error={!!erroresForm.stock}
-                  helperText={erroresForm.stock || `Mín: ${LIMITES_NUMERICOS.stock_min}, Máx: ${LIMITES_NUMERICOS.stock_max.toLocaleString()}`}
-                  inputProps={{
-                    min: LIMITES_NUMERICOS.stock_min,
-                    max: LIMITES_NUMERICOS.stock_max,
-                    step: 1
-                  }}
-                />
-              </Grid>
-              <Grid item xs={12} sm={4}>
-                <TextField
-                  fullWidth
-                  label="Stock Mínimo"
-                  name="stock_minimo"
-                  type="number"
-                  value={formProducto.stock_minimo}
-                  onChange={handleInputChange}
-                  required
-                  error={!!erroresForm.stock_minimo}
-                  helperText={erroresForm.stock_minimo || `Mín: ${LIMITES_NUMERICOS.stock_minimo_min}, Máx: ${LIMITES_NUMERICOS.stock_minimo_max.toLocaleString()}`}
-                  inputProps={{
-                    min: LIMITES_NUMERICOS.stock_minimo_min,
-                    max: LIMITES_NUMERICOS.stock_minimo_max,
-                    step: 1
-                  }}
-                />
-              </Grid>
-              <Grid item xs={12}>
-                <TextField
-                  fullWidth
-                  label="Precio"
-                  name="precio"
-                  type="number"
-                  value={formProducto.precio}
-                  onChange={handleInputChange}
-                  required
-                  error={!!erroresForm.precio}
-                  helperText={erroresForm.precio || `Mín: ${formatearMoneda(LIMITES_NUMERICOS.precio_min)}, Máx: ${formatearMoneda(LIMITES_NUMERICOS.precio_max)}`}
-                  inputProps={{
-                    min: LIMITES_NUMERICOS.precio_min,
-                    max: LIMITES_NUMERICOS.precio_max,
-                    step: 0.01
-                  }}
-                  InputProps={{
-                    startAdornment: <Typography sx={{ mr: 1 }}>$</Typography>
-                  }}
-                />
-              </Grid>
+          <Grid container spacing={2} sx={{ mt: 1 }}>
+            <Grid item xs={12} sm={6}>
+              <TextField
+                fullWidth
+                label="Code"
+                name="codigo"
+                value={formProducto.codigo}
+                onChange={handleInputChange}
+                disabled={modoEdicion}
+                error={!!erroresForm.codigo}
+                helperText={erroresForm.codigo}
+              />
             </Grid>
-          </Box>
+            <Grid item xs={12} sm={6}>
+              <TextField
+                fullWidth
+                label="Category"
+                name="categoria"
+                value={formProducto.categoria}
+                onChange={handleInputChange}
+                error={!!erroresForm.categoria}
+                helperText={erroresForm.categoria}
+              />
+            </Grid>
+            <Grid item xs={12}>
+              <TextField
+                fullWidth
+                label="Name"
+                name="nombre"
+                value={formProducto.nombre}
+                onChange={handleInputChange}
+                error={!!erroresForm.nombre}
+                helperText={erroresForm.nombre}
+              />
+            </Grid>
+            <Grid item xs={12}>
+              <TextField
+                fullWidth
+                label="Description"
+                name="descripcion"
+                value={formProducto.descripcion}
+                onChange={handleInputChange}
+                multiline
+                rows={2}
+                error={!!erroresForm.descripcion}
+                helperText={erroresForm.descripcion}
+              />
+            </Grid>
+            <Grid item xs={12} sm={4}>
+              <TextField
+                fullWidth
+                select
+                label="Unit"
+                name="unidad"
+                value={formProducto.unidad}
+                onChange={handleInputChange}
+              >
+                <MenuItem value="unidad">Unit</MenuItem>
+                <MenuItem value="kg">Kilogram</MenuItem>
+                <MenuItem value="g">Gram</MenuItem>
+                <MenuItem value="l">Liter</MenuItem>
+                <MenuItem value="ml">Milliliter</MenuItem>
+                <MenuItem value="caja">Box</MenuItem>
+              </TextField>
+            </Grid>
+            <Grid item xs={12} sm={4}>
+              <TextField
+                fullWidth
+                label="Stock"
+                name="stock"
+                type="number"
+                value={formProducto.stock}
+                onChange={handleInputChange}
+                error={!!erroresForm.stock}
+                helperText={erroresForm.stock}
+              />
+            </Grid>
+            <Grid item xs={12} sm={4}>
+              <TextField
+                fullWidth
+                label="Minimum Stock"
+                name="stock_minimo"
+                type="number"
+                value={formProducto.stock_minimo}
+                onChange={handleInputChange}
+                error={!!erroresForm.stock_minimo}
+                helperText={erroresForm.stock_minimo}
+              />
+            </Grid>
+            <Grid item xs={12}>
+              <TextField
+                fullWidth
+                label="Price"
+                name="precio"
+                type="number"
+                value={formProducto.precio}
+                onChange={handleInputChange}
+                InputProps={{ startAdornment: <Typography sx={{ mr: 1 }}>$</Typography> }}
+                error={!!erroresForm.precio}
+                helperText={erroresForm.precio}
+              />
+            </Grid>
+          </Grid>
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setModalProducto(false)} disabled={loading}>
-            Cancelar
+            Cancel
           </Button>
           <Button
             variant="contained"
             onClick={modoEdicion ? editarProducto : crearProducto}
             disabled={loading}
           >
-            {loading ? <CircularProgress size={24} /> : modoEdicion ? 'Actualizar' : 'Crear'}
+            {loading ? <CircularProgress size={24} /> : (modoEdicion ? 'Update' : 'Create')}
           </Button>
         </DialogActions>
       </Dialog>
+
+      {/* Footer reorganizado */}
+      <Box sx={{ mt: 8, py: 3, bgcolor: '#000', color: '#fff' }}>
+        <Container maxWidth="xl">
+          <Grid container spacing={3} alignItems="center">
+            <Grid item xs={12} md={6}>
+              <Typography variant="h6" sx={{ fontWeight: 700, mb: 1 }}>
+                Inventory Pro Analytics
+              </Typography>
+              <Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.7)' }}>
+                Advanced inventory management and analytics system
+              </Typography>
+            </Grid>
+            <Grid item xs={12} md={6}>
+              <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 3 }}>
+                <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.5)' }}>
+                  © {new Date().getFullYear()} GameStore
+                </Typography>
+                <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.5)' }}>
+                  v2.1.0
+                </Typography>
+                <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.5)' }}>
+                  Last updated: {new Date().toLocaleDateString()}
+                </Typography>
+              </Box>
+            </Grid>
+          </Grid>
+        </Container>
+      </Box>
     </Box>
   );
 };

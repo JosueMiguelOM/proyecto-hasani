@@ -1,15 +1,17 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom'; // Importar useNavigate
+import { useNavigate } from 'react-router-dom';
 
 const ShoppingCart = () => {
   const [products, setProducts] = useState([]);
   const [cart, setCart] = useState([]);
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [currentView, setCurrentView] = useState('products'); // products, cart, orders
+  const [currentView, setCurrentView] = useState('products');
   const [user, setUser] = useState(null);
+  const [hoveredProduct, setHoveredProduct] = useState(null);
+  const [isCartOpen, setIsCartOpen] = useState(false);
   
-  const navigate = useNavigate(); // Inicializar navigate
+  const navigate = useNavigate();
 
   const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
 
@@ -21,6 +23,252 @@ const ShoppingCart = () => {
     loadOrders();
   }, []);
 
+  // Estilos globales
+  const styles = {
+    container: {
+      minHeight: '100vh',
+      backgroundColor: '#ffffff',
+      fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
+      color: '#1a1a1a',
+      padding: '0',
+      margin: '0',
+      overflowX: 'hidden'
+    },
+    header: {
+      position: 'sticky',
+      top: '0',
+      zIndex: '100',
+      backgroundColor: 'rgba(255, 255, 255, 0.95)',
+      backdropFilter: 'blur(10px)',
+      borderBottom: '1px solid #f0f0f0',
+      padding: '20px 40px',
+      display: 'flex',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      transition: 'all 0.3s ease'
+    },
+    navButton: {
+      border: 'none',
+      background: 'transparent',
+      color: '#1a1a1a',
+      fontSize: '14px',
+      fontWeight: '500',
+      padding: '12px 24px',
+      cursor: 'pointer',
+      borderRadius: '50px',
+      transition: 'all 0.3s ease',
+      position: 'relative',
+      overflow: 'hidden'
+    },
+    activeNavButton: {
+      backgroundColor: '#1a1a1a',
+      color: '#ffffff',
+      transform: 'scale(1.05)'
+    },
+    backButton: {
+      display: 'flex',
+      alignItems: 'center',
+      gap: '8px',
+      backgroundColor: 'transparent',
+      border: '1px solid #e0e0e0',
+      color: '#1a1a1a',
+      padding: '10px 20px',
+      borderRadius: '25px',
+      cursor: 'pointer',
+      fontSize: '14px',
+      fontWeight: '500',
+      transition: 'all 0.3s ease'
+    },
+    productGrid: {
+      display: 'grid',
+      gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))',
+      gap: '30px',
+      padding: '40px',
+      maxWidth: '1400px',
+      margin: '0 auto'
+    },
+    productCard: {
+      background: '#ffffff',
+      border: '1px solid #f0f0f0',
+      borderRadius: '20px',
+      overflow: 'hidden',
+      transition: 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
+      position: 'relative',
+      cursor: 'pointer'
+    },
+    productImage: {
+      width: '100%',
+      height: '240px',
+      objectFit: 'cover',
+      transition: 'transform 0.6s ease'
+    },
+    productInfo: {
+      padding: '24px',
+      position: 'relative'
+    },
+    addToCartBtn: {
+      position: 'absolute',
+      bottom: '24px',
+      right: '24px',
+      width: '50px',
+      height: '50px',
+      borderRadius: '50%',
+      backgroundColor: '#1a1a1a',
+      color: '#ffffff',
+      border: 'none',
+      cursor: 'pointer',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      fontSize: '20px',
+      transition: 'all 0.3s ease',
+      transform: 'scale(0)',
+      opacity: '0'
+    },
+    cartSidebar: {
+      position: 'fixed',
+      top: '0',
+      right: isCartOpen ? '0' : '-400px',
+      width: '380px',
+      height: '100vh',
+      backgroundColor: '#ffffff',
+      boxShadow: '-5px 0 30px rgba(0,0,0,0.1)',
+      transition: 'right 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
+      zIndex: '1000',
+      padding: '30px',
+      display: 'flex',
+      flexDirection: 'column'
+    },
+    cartItem: {
+      display: 'flex',
+      alignItems: 'center',
+      padding: '20px 0',
+      borderBottom: '1px solid #f0f0f0',
+      animation: 'slideIn 0.3s ease'
+    },
+    checkoutButton: {
+      backgroundColor: '#1a1a1a',
+      color: '#ffffff',
+      border: 'none',
+      padding: '18px',
+      borderRadius: '12px',
+      fontSize: '16px',
+      fontWeight: '600',
+      cursor: 'pointer',
+      transition: 'all 0.3s ease',
+      width: '100%',
+      marginTop: '20px'
+    },
+    orderCard: {
+      background: '#ffffff',
+      border: '1px solid #f0f0f0',
+      borderRadius: '16px',
+      padding: '24px',
+      marginBottom: '16px',
+      transition: 'all 0.3s ease',
+      position: 'relative'
+    },
+    statusBadge: {
+      position: 'absolute',
+      top: '24px',
+      right: '24px',
+      padding: '8px 16px',
+      borderRadius: '20px',
+      fontSize: '12px',
+      fontWeight: '600',
+      textTransform: 'uppercase',
+      letterSpacing: '0.5px'
+    },
+    sectionTitle: {
+      fontSize: '32px',
+      fontWeight: '700',
+      marginBottom: '40px',
+      textAlign: 'center',
+      position: 'relative',
+      paddingBottom: '20px'
+    },
+    sectionTitleLine: {
+      content: '""',
+      position: 'absolute',
+      bottom: '0',
+      left: '50%',
+      transform: 'translateX(-50%)',
+      width: '60px',
+      height: '3px',
+      backgroundColor: '#1a1a1a'
+    },
+    cartCounter: {
+      position: 'absolute',
+      top: '-8px',
+      right: '-8px',
+      backgroundColor: '#ff4444',
+      color: 'white',
+      borderRadius: '50%',
+      width: '22px',
+      height: '22px',
+      fontSize: '12px',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      fontWeight: '600'
+    },
+    quantityControls: {
+      display: 'flex',
+      alignItems: 'center',
+      gap: '12px',
+      marginLeft: 'auto'
+    },
+    quantityBtn: {
+      width: '36px',
+      height: '36px',
+      borderRadius: '50%',
+      border: '1px solid #e0e0e0',
+      background: 'transparent',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      cursor: 'pointer',
+      transition: 'all 0.2s ease'
+    }
+  };
+
+  // Animaciones CSS
+  const keyframes = `
+    @keyframes slideIn {
+      from {
+        opacity: 0;
+        transform: translateX(20px);
+      }
+      to {
+        opacity: 1;
+        transform: translateX(0);
+      }
+    }
+    
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+        transform: translateY(20px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+    
+    @keyframes pulse {
+      0% { transform: scale(1); }
+      50% { transform: scale(1.05); }
+      100% { transform: scale(1); }
+    }
+    
+    @keyframes shimmer {
+      0% { background-position: -200px 0; }
+      100% { background-position: 200px 0; }
+    }
+  `;
+
+  // Funciones de carga (sin cambios)
   const loadUser = async () => {
     try {
       const token = localStorage.getItem('token');
@@ -105,7 +353,14 @@ const ShoppingCart = () => {
     }
 
     saveCart(newCart);
-    alert(`${product.nombre} agregado al carrito`);
+    // Animación de confirmación
+    const button = document.querySelector(`[data-product-id="${product.id}"]`);
+    if (button) {
+      button.style.animation = 'pulse 0.3s ease';
+      setTimeout(() => {
+        button.style.animation = '';
+      }, 300);
+    }
   };
 
   const updateQuantity = (productId, newQuantity) => {
@@ -163,8 +418,6 @@ const ShoppingCart = () => {
 
       if (response.ok) {
         const data = await response.json();
-        
-        // Redirigir a PayPal
         window.location.href = data.data.approvalUrl;
       } else {
         const errorData = await response.json();
@@ -186,447 +439,442 @@ const ShoppingCart = () => {
   };
 
   const formatDate = (dateString) => {
-    return new Date(dateString).toLocaleString();
+    return new Date(dateString).toLocaleString('es-ES', {
+      day: '2-digit',
+      month: 'short',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
   };
 
   const getStatusColor = (status) => {
     const colors = {
-      pending: '#ffc107',
-      processing: '#17a2b8',
-      completed: '#28a745',
-      cancelled: '#dc3545',
-      refunded: '#6c757d'
+      pending: '#FFA726',
+      processing: '#29B6F6',
+      completed: '#66BB6A',
+      cancelled: '#EF5350',
+      refunded: '#78909C'
     };
-    return colors[status] || '#6c757d';
+    return colors[status] || '#78909C';
   };
 
   const getStatusText = (status) => {
     const texts = {
-      pending: 'Pendiente',
-      processing: 'Procesando',
-      completed: 'Completado',
-      cancelled: 'Cancelado',
-      refunded: 'Reembolsado'
+      pending: 'PENDIENTE',
+      processing: 'PROCESANDO',
+      completed: 'COMPLETADO',
+      cancelled: 'CANCELADO',
+      refunded: 'REEMBOLSADO'
     };
-    return texts[status] || status;
+    return texts[status] || status.toUpperCase();
   };
 
   return (
-    <div style={{ padding: '20px', maxWidth: '1200px', margin: '0 auto', fontFamily: 'Arial, sans-serif' }}>
-      {/* Header - ACTUALIZADO CON BOTÓN REGRESAR */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '30px' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-          <button
+    <div style={styles.container}>
+      {/* Inyectar animaciones CSS */}
+      <style>{keyframes}</style>
+      
+      {/* Header minimalista */}
+      <header style={styles.header}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '30px' }}>
+          <button 
             onClick={() => navigate(-1)}
-            style={{
-              padding: '8px 12px',
-              backgroundColor: '#6c757d',
-              color: 'white',
-              border: 'none',
-              borderRadius: '5px',
-              cursor: 'pointer',
-              fontSize: '14px',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '5px'
-            }}
-            title="Regresar atrás"
+            style={styles.backButton}
+            onMouseEnter={(e) => e.target.style.backgroundColor = '#f5f5f5'}
+            onMouseLeave={(e) => e.target.style.backgroundColor = 'transparent'}
           >
-            ← Regresar
+            ← Volver
           </button>
-          <h1>🛒 Tienda Online</h1>
-        </div>
-        {user && (
-          <div style={{ fontSize: '14px', color: '#666' }}>
-            Bienvenido, {user.nombre}
+          
+          <div style={{ display: 'flex', gap: '8px' }}>
+            {['products', 'orders'].map(view => (
+              <button
+                key={view}
+                onClick={() => setCurrentView(view)}
+                style={{
+                  ...styles.navButton,
+                  ...(currentView === view ? styles.activeNavButton : {})
+                }}
+                onMouseEnter={(e) => {
+                  if (currentView !== view) {
+                    e.target.style.backgroundColor = '#f5f5f5';
+                  }
+                }}
+                onMouseLeave={(e) => {
+                  if (currentView !== view) {
+                    e.target.style.backgroundColor = 'transparent';
+                  }
+                }}
+              >
+                {view === 'products' ? '🏪 Productos' : '📋 Mis Pedidos'}
+              </button>
+            ))}
           </div>
-        )}
-      </div>
+        </div>
 
-      {/* Navigation */}
-      <div style={{ marginBottom: '30px' }}>
-        <nav style={{ display: 'flex', gap: '10px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '30px' }}>
+          {user && (
+            <div style={{ fontSize: '14px', color: '#666' }}>
+              👋 Hola, <strong>{user.nombre}</strong>
+            </div>
+          )}
+          
           <button
-            onClick={() => setCurrentView('products')}
+            onClick={() => setIsCartOpen(!isCartOpen)}
             style={{
-              padding: '10px 20px',
-              backgroundColor: currentView === 'products' ? '#007bff' : '#f8f9fa',
-              color: currentView === 'products' ? 'white' : '#333',
-              border: '1px solid #ddd',
-              borderRadius: '5px',
-              cursor: 'pointer'
-            }}
-          >
-            🏪 Productos
-          </button>
-          <button
-            onClick={() => setCurrentView('cart')}
-            style={{
-              padding: '10px 20px',
-              backgroundColor: currentView === 'cart' ? '#007bff' : '#f8f9fa',
-              color: currentView === 'cart' ? 'white' : '#333',
-              border: '1px solid #ddd',
-              borderRadius: '5px',
-              cursor: 'pointer',
+              ...styles.navButton,
               position: 'relative'
             }}
           >
             🛒 Carrito
             {cart.length > 0 && (
-              <span style={{
-                position: 'absolute',
-                top: '-5px',
-                right: '-5px',
-                backgroundColor: '#dc3545',
-                color: 'white',
-                borderRadius: '50%',
-                width: '20px',
-                height: '20px',
-                fontSize: '12px',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center'
-              }}>
+              <span style={styles.cartCounter}>
                 {getCartItemsCount()}
               </span>
             )}
           </button>
+        </div>
+      </header>
+
+      {/* Carrito lateral */}
+      <div style={styles.cartSidebar}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '30px' }}>
+          <h3 style={{ margin: '0', fontSize: '24px', fontWeight: '700' }}>Tu Carrito</h3>
           <button
-            onClick={() => setCurrentView('orders')}
+            onClick={() => setIsCartOpen(false)}
             style={{
-              padding: '10px 20px',
-              backgroundColor: currentView === 'orders' ? '#007bff' : '#f8f9fa',
-              color: currentView === 'orders' ? 'white' : '#333',
-              border: '1px solid #ddd',
-              borderRadius: '5px',
-              cursor: 'pointer'
+              background: 'transparent',
+              border: 'none',
+              fontSize: '24px',
+              cursor: 'pointer',
+              color: '#666',
+              padding: '5px'
             }}
           >
-            📋 Mis Órdenes
+            ×
           </button>
-        </nav>
-      </div>
-
-      {/* Products View */}
-      {currentView === 'products' && (
-        <div>
-          <h2>Productos Disponibles</h2>
-          <div style={{ 
-            display: 'grid', 
-            gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', 
-            gap: '20px',
-            marginTop: '20px'
-          }}>
-            {products.map(product => (
-              <div key={product.id} style={{
-                border: '1px solid #ddd',
-                borderRadius: '8px',
-                padding: '15px',
-                backgroundColor: 'white',
-                boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
-              }}>
-                <img 
-                  src={product.imagen_url} 
-                  alt={product.nombre}
-                  style={{
-                    width: '100%',
-                    height: '200px',
-                    objectFit: 'cover',
-                    borderRadius: '5px',
-                    marginBottom: '10px'
-                  }}
-                />
-                <h3 style={{ margin: '0 0 10px 0', fontSize: '18px' }}>
-                  {product.nombre}
-                </h3>
-                <p style={{ margin: '0 0 10px 0', color: '#666', fontSize: '14px' }}>
-                  {product.descripcion}
-                </p>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
-                  <span style={{ fontSize: '20px', fontWeight: 'bold', color: '#28a745' }}>
-                    {formatPrice(product.precio)}
-                  </span>
-                  <span style={{ fontSize: '12px', color: '#666' }}>
-                    Stock: {product.stock}
-                  </span>
-                </div>
-                <div style={{ marginBottom: '10px' }}>
-                  <span style={{
-                    padding: '4px 8px',
-                    backgroundColor: '#e9ecef',
-                    borderRadius: '12px',
-                    fontSize: '12px',
-                    color: '#495057'
-                  }}>
-                    {product.categoria}
-                  </span>
-                </div>
-                <button
-                  onClick={() => addToCart(product)}
-                  disabled={product.stock <= 0}
-                  style={{
-                    width: '100%',
-                    padding: '10px',
-                    backgroundColor: product.stock > 0 ? '#007bff' : '#6c757d',
-                    color: 'white',
-                    border: 'none',
-                    borderRadius: '5px',
-                    cursor: product.stock > 0 ? 'pointer' : 'not-allowed',
-                    fontSize: '14px',
-                    fontWeight: 'bold'
-                  }}
-                >
-                  {product.stock > 0 ? '🛒 Agregar al Carrito' : 'Sin Stock'}
-                </button>
-              </div>
-            ))}
-          </div>
         </div>
-      )}
 
-      {/* Cart View */}
-      {currentView === 'cart' && (
-        <div>
-          <h2>Mi Carrito de Compras</h2>
+        <div style={{ flex: 1, overflowY: 'auto' }}>
           {cart.length === 0 ? (
-            <div style={{
-              textAlign: 'center',
-              padding: '40px',
-              backgroundColor: '#f8f9fa',
-              borderRadius: '8px',
-              color: '#6c757d'
-            }}>
-              <div style={{ fontSize: '48px', marginBottom: '20px' }}>🛒</div>
-              <h3>Tu carrito está vacío</h3>
-              <p>Agrega algunos productos para comenzar</p>
-              <button
-                onClick={() => setCurrentView('products')}
-                style={{
-                  padding: '10px 20px',
-                  backgroundColor: '#007bff',
-                  color: 'white',
-                  border: 'none',
-                  borderRadius: '5px',
-                  cursor: 'pointer',
-                  marginTop: '10px'
-                }}
-              >
-                Ver Productos
-              </button>
+            <div style={{ textAlign: 'center', padding: '40px 0', color: '#999' }}>
+              <div style={{ fontSize: '60px', marginBottom: '20px' }}>🛒</div>
+              <p style={{ margin: '0', fontSize: '16px' }}>Tu carrito está vacío</p>
             </div>
           ) : (
-            <div>
-              {/* Cart Items */}
-              <div style={{ marginBottom: '20px' }}>
-                {cart.map(item => (
-                  <div key={item.productId} style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    padding: '15px',
-                    border: '1px solid #ddd',
-                    borderRadius: '8px',
-                    marginBottom: '10px',
-                    backgroundColor: 'white'
-                  }}>
-                    <img 
-                      src={item.image} 
-                      alt={item.name}
-                      style={{
-                        width: '80px',
-                        height: '80px',
-                        objectFit: 'cover',
-                        borderRadius: '5px',
-                        marginRight: '15px'
-                      }}
-                    />
-                    <div style={{ flex: 1 }}>
-                      <h4 style={{ margin: '0 0 5px 0' }}>{item.name}</h4>
-                      <p style={{ margin: '0', color: '#666' }}>
-                        {formatPrice(item.price)} cada uno
-                      </p>
+            cart.map(item => (
+              <div key={item.productId} style={styles.cartItem}>
+                <img 
+                  src={item.image} 
+                  alt={item.name}
+                  style={{
+                    width: '60px',
+                    height: '60px',
+                    objectFit: 'cover',
+                    borderRadius: '10px',
+                    marginRight: '15px'
+                  }}
+                />
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontWeight: '600', marginBottom: '4px' }}>{item.name}</div>
+                  <div style={{ fontSize: '14px', color: '#666' }}>
+                    {formatPrice(item.price)} × {item.quantity}
+                  </div>
+                </div>
+                <div style={styles.quantityControls}>
+                  <button
+                    onClick={() => updateQuantity(item.productId, item.quantity - 1)}
+                    style={styles.quantityBtn}
+                  >
+                    −
+                  </button>
+                  <span style={{ minWidth: '30px', textAlign: 'center', fontWeight: '600' }}>
+                    {item.quantity}
+                  </span>
+                  <button
+                    onClick={() => updateQuantity(item.productId, item.quantity + 1)}
+                    style={styles.quantityBtn}
+                  >
+                    +
+                  </button>
+                </div>
+                <button
+                  onClick={() => removeFromCart(item.productId)}
+                  style={{
+                    marginLeft: '15px',
+                    background: 'transparent',
+                    border: 'none',
+                    color: '#999',
+                    cursor: 'pointer',
+                    fontSize: '18px',
+                    transition: 'color 0.2s ease'
+                  }}
+                  onMouseEnter={(e) => e.target.color = '#ff4444'}
+                  onMouseLeave={(e) => e.target.color = '#999'}
+                >
+                  ×
+                </button>
+              </div>
+            ))
+          )}
+        </div>
+
+        {cart.length > 0 && (
+          <div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+              <span style={{ fontSize: '18px', fontWeight: '600' }}>Total:</span>
+              <span style={{ fontSize: '28px', fontWeight: '700' }}>
+                {formatPrice(getCartTotal())}
+              </span>
+            </div>
+            <button
+              onClick={handleCheckout}
+              disabled={loading}
+              style={{
+                ...styles.checkoutButton,
+                ...(loading ? { backgroundColor: '#666' } : {})
+              }}
+              onMouseEnter={(e) => {
+                if (!loading) e.target.style.transform = 'translateY(-2px)';
+              }}
+              onMouseLeave={(e) => {
+                if (!loading) e.target.style.transform = 'translateY(0)';
+              }}
+            >
+              {loading ? 'PROCESANDO...' : 'PAGAR AHORA'}
+            </button>
+          </div>
+        )}
+      </div>
+
+      {/* Overlay para carrito */}
+      {isCartOpen && (
+        <div 
+          onClick={() => setIsCartOpen(false)}
+          style={{
+            position: 'fixed',
+            top: '0',
+            left: '0',
+            right: '0',
+            bottom: '0',
+            backgroundColor: 'rgba(0,0,0,0.5)',
+            zIndex: '999',
+            animation: 'fadeIn 0.3s ease'
+          }}
+        />
+      )}
+
+      {/* Contenido principal */}
+      <main style={{ padding: '0 40px 40px', animation: 'fadeIn 0.5s ease' }}>
+        {/* Vista de Productos */}
+        {currentView === 'products' && (
+          <>
+            <div style={{ textAlign: 'center', margin: '60px 0 40px' }}>
+              <h1 style={{ fontSize: '48px', fontWeight: '800', margin: '0', letterSpacing: '-0.5px' }}>
+                Productos Destacados
+              </h1>
+              <p style={{ fontSize: '18px', color: '#666', marginTop: '16px', maxWidth: '600px', margin: '16px auto 0' }}>
+                Descubre nuestra selección premium de productos
+              </p>
+            </div>
+            
+            <div style={styles.productGrid}>
+              {products.map((product, index) => (
+                <div 
+                  key={product.id}
+                  style={{
+                    ...styles.productCard,
+                    animation: `fadeIn 0.5s ease ${index * 0.1}s both`
+                  }}
+                  onMouseEnter={() => setHoveredProduct(product.id)}
+                  onMouseLeave={() => setHoveredProduct(null)}
+                >
+                  <img 
+                    src={product.imagen_url} 
+                    alt={product.nombre}
+                    style={{
+                      ...styles.productImage,
+                      transform: hoveredProduct === product.id ? 'scale(1.05)' : 'scale(1)'
+                    }}
+                  />
+                  <div style={styles.productInfo}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '12px' }}>
+                      <div>
+                        <h3 style={{ margin: '0 0 8px 0', fontSize: '20px', fontWeight: '700' }}>
+                          {product.nombre}
+                        </h3>
+                        <span style={{
+                          display: 'inline-block',
+                          padding: '4px 12px',
+                          backgroundColor: '#f5f5f5',
+                          borderRadius: '12px',
+                          fontSize: '12px',
+                          fontWeight: '600',
+                          color: '#666'
+                        }}>
+                          {product.categoria}
+                        </span>
+                      </div>
+                      <span style={{ fontSize: '24px', fontWeight: '800', color: '#1a1a1a' }}>
+                        {formatPrice(product.precio)}
+                      </span>
                     </div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                      <button
-                        onClick={() => updateQuantity(item.productId, item.quantity - 1)}
-                        style={{
-                          width: '30px',
-                          height: '30px',
-                          backgroundColor: '#f8f9fa',
-                          border: '1px solid #ddd',
-                          borderRadius: '5px',
-                          cursor: 'pointer'
-                        }}
-                      >
-                        -
-                      </button>
-                      <span style={{ minWidth: '30px', textAlign: 'center', fontWeight: 'bold' }}>
-                        {item.quantity}
+                    
+                    <p style={{ 
+                      margin: '0 0 40px 0', 
+                      color: '#666', 
+                      fontSize: '14px',
+                      lineHeight: '1.6'
+                    }}>
+                      {product.descripcion}
+                    </p>
+                    
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <span style={{ fontSize: '13px', color: product.stock > 0 ? '#66BB6A' : '#EF5350', fontWeight: '600' }}>
+                        {product.stock > 0 ? `📦 ${product.stock} disponibles` : '❌ Sin stock'}
                       </span>
                       <button
-                        onClick={() => updateQuantity(item.productId, item.quantity + 1)}
+                        data-product-id={product.id}
+                        onClick={() => product.stock > 0 && addToCart(product)}
+                        disabled={product.stock <= 0}
                         style={{
-                          width: '30px',
-                          height: '30px',
-                          backgroundColor: '#f8f9fa',
-                          border: '1px solid #ddd',
-                          borderRadius: '5px',
-                          cursor: 'pointer'
+                          ...styles.addToCartBtn,
+                          transform: hoveredProduct === product.id ? 'scale(1)' : 'scale(0)',
+                          opacity: hoveredProduct === product.id ? '1' : '0',
+                          backgroundColor: product.stock > 0 ? '#1a1a1a' : '#999',
+                          cursor: product.stock > 0 ? 'pointer' : 'not-allowed'
                         }}
                       >
                         +
                       </button>
-                      <div style={{ minWidth: '80px', textAlign: 'right', fontWeight: 'bold' }}>
-                        {formatPrice(item.price * item.quantity)}
-                      </div>
-                      <button
-                        onClick={() => removeFromCart(item.productId)}
-                        style={{
-                          width: '30px',
-                          height: '30px',
-                          backgroundColor: '#dc3545',
-                          color: 'white',
-                          border: 'none',
-                          borderRadius: '5px',
-                          cursor: 'pointer',
-                          marginLeft: '10px'
-                        }}
-                      >
-                        🗑️
-                      </button>
                     </div>
                   </div>
-                ))}
-              </div>
-
-              {/* Cart Summary */}
-              <div style={{
-                border: '1px solid #ddd',
-                borderRadius: '8px',
-                padding: '20px',
-                backgroundColor: '#f8f9fa'
-              }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px' }}>
-                  <span style={{ fontSize: '18px' }}>Total de items:</span>
-                  <span style={{ fontSize: '18px', fontWeight: 'bold' }}>{getCartItemsCount()}</span>
-                </div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-                  <span style={{ fontSize: '20px', fontWeight: 'bold' }}>Total a pagar:</span>
-                  <span style={{ fontSize: '24px', fontWeight: 'bold', color: '#28a745' }}>
-                    {formatPrice(getCartTotal())}
-                  </span>
-                </div>
-                <button
-                  onClick={handleCheckout}
-                  disabled={loading}
-                  style={{
-                    width: '100%',
-                    padding: '15px',
-                    backgroundColor: loading ? '#6c757d' : '#007bff',
-                    color: 'white',
-                    border: 'none',
-                    borderRadius: '5px',
-                    cursor: loading ? 'not-allowed' : 'pointer',
-                    fontSize: '16px',
-                    fontWeight: 'bold'
-                  }}
-                >
-                  {loading ? '⏳ Procesando...' : '💳 Pagar con PayPal'}
-                </button>
-              </div>
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* Orders View */}
-      {currentView === 'orders' && (
-        <div>
-          <h2>Mis Órdenes</h2>
-          {orders.length === 0 ? (
-            <div style={{
-              textAlign: 'center',
-              padding: '40px',
-              backgroundColor: '#f8f9fa',
-              borderRadius: '8px',
-              color: '#6c757d'
-            }}>
-              <div style={{ fontSize: '48px', marginBottom: '20px' }}>📋</div>
-              <h3>No tienes órdenes aún</h3>
-              <p>Realiza tu primera compra</p>
-              <button
-                onClick={() => setCurrentView('products')}
-                style={{
-                  padding: '10px 20px',
-                  backgroundColor: '#007bff',
-                  color: 'white',
-                  border: 'none',
-                  borderRadius: '5px',
-                  cursor: 'pointer',
-                  marginTop: '10px'
-                }}
-              >
-                Ver Productos
-              </button>
-            </div>
-          ) : (
-            <div>
-              {orders.map(order => (
-                <div key={order.id} style={{
-                  border: '1px solid #ddd',
-                  borderRadius: '8px',
-                  padding: '20px',
-                  marginBottom: '15px',
-                  backgroundColor: 'white'
-                }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
-                    <div>
-                      <h4 style={{ margin: '0 0 5px 0' }}>Orden #{order.id}</h4>
-                      <p style={{ margin: '0', color: '#666', fontSize: '14px' }}>
-                        {formatDate(order.fecha_creacion)}
-                      </p>
-                    </div>
-                    <div style={{ textAlign: 'right' }}>
-                      <div style={{
-                        padding: '5px 10px',
-                        backgroundColor: getStatusColor(order.estado),
-                        color: 'white',
-                        borderRadius: '12px',
-                        fontSize: '12px',
-                        marginBottom: '5px'
-                      }}>
-                        {getStatusText(order.estado)}
-                      </div>
-                      <div style={{ fontSize: '18px', fontWeight: 'bold' }}>
-                        {formatPrice(order.total)}
-                      </div>
-                    </div>
-                  </div>
-                  
-                  {/* Order Items */}
-                  {order.items && (
-                    <div style={{ marginTop: '15px' }}>
-                      <h5 style={{ margin: '0 0 10px 0', color: '#666' }}>Artículos:</h5>
-                      <div style={{ fontSize: '14px', color: '#666' }}>
-                        {JSON.parse(typeof order.items === 'string' ? order.items : JSON.stringify(order.items)).map((item, index) => (
-                          <div key={index} style={{ marginBottom: '5px' }}>
-                            • Producto ID: {item.productId} - Cantidad: {item.quantity}
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                  
-                  {order.paypal_capture_id && (
-                    <div style={{ marginTop: '10px', fontSize: '12px', color: '#666' }}>
-                      ID de transacción: {order.paypal_capture_id}
-                    </div>
-                  )}
                 </div>
               ))}
             </div>
-          )}
-        </div>
-      )}
+          </>
+        )}
+
+        {/* Vista de Pedidos */}
+        {currentView === 'orders' && (
+          <>
+            <div style={{ textAlign: 'center', margin: '60px 0 40px' }}>
+              <h1 style={{ fontSize: '48px', fontWeight: '800', margin: '0', letterSpacing: '-0.5px' }}>
+                Historial de Pedidos
+              </h1>
+              <p style={{ fontSize: '18px', color: '#666', marginTop: '16px' }}>
+                Revisa el estado de tus compras anteriores
+              </p>
+            </div>
+            
+            <div style={{ maxWidth: '800px', margin: '0 auto' }}>
+              {orders.length === 0 ? (
+                <div style={{ textAlign: 'center', padding: '80px 40px', color: '#999' }}>
+                  <div style={{ fontSize: '60px', marginBottom: '20px' }}>📭</div>
+                  <h3 style={{ fontSize: '24px', fontWeight: '600', marginBottom: '12px' }}>
+                    No hay pedidos aún
+                  </h3>
+                  <p style={{ fontSize: '16px', marginBottom: '30px' }}>
+                    Realiza tu primera compra para verla aquí
+                  </p>
+                  <button
+                    onClick={() => setCurrentView('products')}
+                    style={{
+                      backgroundColor: '#1a1a1a',
+                      color: 'white',
+                      border: 'none',
+                      padding: '14px 32px',
+                      borderRadius: '25px',
+                      fontSize: '16px',
+                      fontWeight: '600',
+                      cursor: 'pointer',
+                      transition: 'all 0.3s ease'
+                    }}
+                    onMouseEnter={(e) => e.target.style.transform = 'translateY(-2px)'}
+                    onMouseLeave={(e) => e.target.style.transform = 'translateY(0)'}
+                  >
+                    Explorar Productos
+                  </button>
+                </div>
+              ) : (
+                orders.map((order, index) => (
+                  <div 
+                    key={order.id}
+                    style={{
+                      ...styles.orderCard,
+                      animation: `fadeIn 0.5s ease ${index * 0.1}s both`
+                    }}
+                  >
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '20px' }}>
+                      <div>
+                        <h3 style={{ margin: '0 0 8px 0', fontSize: '18px', fontWeight: '700' }}>
+                          Pedido #{order.id}
+                        </h3>
+                        <p style={{ margin: '0', fontSize: '14px', color: '#666' }}>
+                          📅 {formatDate(order.fecha_creacion)}
+                        </p>
+                      </div>
+                      <span style={{ fontSize: '22px', fontWeight: '800' }}>
+                        {formatPrice(order.total)}
+                      </span>
+                    </div>
+                    
+                    <div style={{
+                      ...styles.statusBadge,
+                      backgroundColor: getStatusColor(order.estado)
+                    }}>
+                      {getStatusText(order.estado)}
+                    </div>
+
+                    {order.items && (
+                      <div style={{ marginTop: '20px', paddingTop: '20px', borderTop: '1px solid #f0f0f0' }}>
+                        <h4 style={{ fontSize: '14px', fontWeight: '600', marginBottom: '12px', color: '#666' }}>
+                          ARTÍCULOS COMPRADOS:
+                        </h4>
+                        <div style={{ fontSize: '14px', color: '#666' }}>
+                          {JSON.parse(typeof order.items === 'string' ? order.items : JSON.stringify(order.items)).map((item, idx) => (
+                            <div key={idx} style={{ marginBottom: '8px' }}>
+                              • Producto #{item.productId} - Cantidad: {item.quantity}
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                    
+                    {order.paypal_capture_id && (
+                      <div style={{ 
+                        marginTop: '16px', 
+                        fontSize: '12px', 
+                        color: '#999',
+                        padding: '8px 12px',
+                        backgroundColor: '#f5f5f5',
+                        borderRadius: '8px'
+                      }}>
+                        🔗 ID de transacción: {order.paypal_capture_id}
+                      </div>
+                    )}
+                  </div>
+                ))
+              )}
+            </div>
+          </>
+        )}
+      </main>
+
+      {/* Footer minimalista */}
+      <footer style={{
+        padding: '40px',
+        textAlign: 'center',
+        color: '#999',
+        fontSize: '14px',
+        borderTop: '1px solid #f0f0f0',
+        marginTop: '60px'
+      }}>
+        <p style={{ margin: '0' }}>
+          © {new Date().getFullYear()} Tienda Online. Todos los derechos reservados.
+        </p>
+      </footer>
     </div>
   );
 };
